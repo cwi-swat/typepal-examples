@@ -16,7 +16,7 @@ module pico::Pico
 
 import Prelude;
 
-extend typepal::TypePal;
+extend analysis::typepal::TypePal;
 
 // ----  Pico syntax -------------------------------------
 
@@ -81,82 +81,81 @@ str AType2String(strType()) = "str";
 
 // ----  Define -----------------------------------------
  
-void collect(d:(Declaration) `<Id id> : <Type tp>`,  Tree scope, FRBuilder frb) {
-     frb.define(scope, "<d.id>", variableId(), d, defType(transType(tp)));
+void collect(d:(Declaration) `<Id id> : <Type tp>`,  TBuilder tb) {
+     tb.define("<d.id>", variableId(), d, defType(transType(tp)));
 }
 
 // ----  Collect uses and requirements ------------------------------------
 
-void collect(e: (Expression) `<Id name>`, Tree scope, FRBuilder frb){
-     frb.use(scope, name, {variableId()});;
+void collect(current: (Expression) `<Id name>`, TBuilder tb){
+     tb.use(name, {variableId()});;
 }
 
-void collect(s: (Statement) `<Id var> := <Expression val>`, Tree scope, FRBuilder frb){
-     frb.use(scope, var, {variableId()});
-     collectChildren(val, scope, frb);
+void collect(current: (Statement) `<Id var> := <Expression val>`, TBuilder tb){
+     tb.use(var, {variableId()});
+     collect(val, tb);
 }
 
 // ----  Requirements ------------------------------------
 
-void collect(s: (Statement) `<Id var> :=  <Expression val>`, Tree scope, FRBuilder frb){
+void collect(current: (Statement) `<Id var> :=  <Expression val>`, TBuilder tb){
      Tree tvar = var; Tree tval = val;
-     frb.require("assignment", s, [tvar, tval],
-                 (){ equal(typeof(var), typeof(val), onError(s, "Lhs <var> should have same type as rhs")); });
-     collectChildren(val, scope, frb);
+     tb.require("assignment", current, [tvar, tval],
+                 (){ equal(getType(var), getType(val), onError(current, "Lhs <var> should have same type as rhs")); });
+     collect(val, tb);
 }
 
-void collect(s: (Statement) `if <Expression cond> then <{Statement ";"}*  thenPart> else <{Statement ";"}* elsePart> fi`, Tree scope, FRBuilder frb){
-     frb.require("int_condition", s, [s.cond],
-         () { equal(typeof(s.cond), intType(), onError(s.cond, "Condition")); });
-     collectChildren(s, scope, frb);
+void collect(current: (Statement) `if <Expression cond> then <{Statement ";"}*  thenPart> else <{Statement ";"}* elsePart> fi`, TBuilder tb){
+     tb.require("int_condition", current, [current.cond],
+         () { equal(getType(s.cond), intType(), onError(s.cond, "Condition")); });
+     collectParts(current, tb);
 }
 
-void collect(s: (Statement) `while <Expression cond> do <{Statement ";"}* body> od`, Tree scope, FRBuilder frb){
-     frb.require("int_condition", s, [s.cond],
-         () { equal(typeof(s.cond), intType(), onError(s.cond, "Condition")); } );
-     collectChildren(s, scope, frb);
+void collect(current: (Statement) `while <Expression cond> do <{Statement ";"}* body> od`, TBuilder tb){
+     tb.require("int_condition", current, [current.cond],
+         () { equal(getType(current.cond), intType(), onError(current.cond, "Condition")); } );
+     collectParts(current, tb);
 }
 
-void collect(e: (Expression) `<Expression lhs> + <Expression rhs>`, Tree scope, FRBuilder frb){
-     frb.calculate("addition", e, [lhs, rhs], 
-         AType () { switch([typeof(lhs), typeof(rhs)]){
+void collect(current: (Expression) `<Expression lhs> + <Expression rhs>`, TBuilder tb){
+     tb.calculate("addition", current, [lhs, rhs], 
+         AType () { switch([getType(lhs), getType(rhs)]){
                   case [intType(), intType()]: return intType();
                   case [strType(), strType()]: return strType();
                   default:
-                       reportError(e, "Operator `+` cannot be applied", [lhs, rhs]);
+                       reportError(current, "Operator `+` cannot be applied to <fmt(lhs)> and <fmt(rhs)>");
                }
             });
-     collectChildren(e, scope, frb);
+     collectParts(current, tb);
 }
 
-void collect(e: (Expression) `<Expression lhs> - <Expression rhs>`, Tree scope, FRBuilder frb){
-     frb.require("subtraction", e, [lhs, rhs],
-         () { equal(typeof(lhs), intType(), onError(lhs, "Lhs of -"));
-              equal(typeof(rhs), intType(), onError(rhs, "Rhs of -"));
-              fact(e, intType());
+void collect(current: (Expression) `<Expression lhs> - <Expression rhs>`, TBuilder tb){
+     tb.require("subtraction", current, [lhs, rhs],
+         () { equal(getType(lhs), intType(), onError(lhs, "Lhs of -"));
+              equal(getType(rhs), intType(), onError(rhs, "Rhs of -"));
+              fact(current, intType());
             });
-     collectChildren(e, scope, frb);
+     collectParts(current, tb);
 }
  
-void collect(e: (Expression) `<String string>`, Tree scope, FRBuilder frb){
-    frb.atomicFact(e, strType());
+void collect(current: (Expression) `<String string>`, TBuilder tb){
+    tb.fact(current, strType());
 }
 
-void collect(e: (Expression) `<Natural natcon>`, Tree scope, FRBuilder frb){
-    frb.atomicFact(e, intType());
+void collect(current: (Expression) `<Natural natcon>`, TBuilder tb){
+    tb.fact(current, intType());
 }
 
 // ----  Examples & Tests --------------------------------
 
-public Program samplePico(str name) = parse(#Program, |home:///git/TypePal/src/pico/<name>.pico|);
+public Program samplePico(str name) = parse(#Program, |project://typepal-examples/src/pico/<name>.pico|);
                      
 set[Message] validatePico(str name) {
-    Tree p = samplePico(name);
-    ex = extractFRModel(p);
-<<<<<<< HEAD
-    return validate(ex).messages;
-=======
-    return validate(ex, debug=false).messages;
->>>>>>> 40b0944d6801fa5e0b892330c740cc334db88760
+    Tree pt = samplePico(name);
+    tb = newTBuilder(pt);
+    collect(pt, tb);
+    tm = tb.build();
+    tm = validate(tm);
+    return tm.messages;
 }
  value main() = validatePico("e1");

@@ -14,8 +14,8 @@ module dtfun::DTFun
 
 // Functional language with declared types
 
-extend typepal::TypePal;
-extend typepal::TestFramework;
+extend analysis::typepal::TypePal;
+extend analysis::typepal::TestFramework;
 
 // ----  DTFun syntax ------------------------------------
 
@@ -75,90 +75,120 @@ str AType2String(intType()) = "int";
 str AType2String(boolType()) = "bool";
 str AType2String(functionType(AType from, AType to)) = "fun <AType2String(from)> -\> <AType2String(to)>";
 
-// ----  Define --------------------------------------------------------
+// ----  function declaration
 
-void collect(e: (Expression) `fun <Id name> : <Type tp> { <Expression body> }`, FRBuilder frb) {   
-     frb.define("<name>", variableId(), name, defType(transType(tp)));
-     frb.enterScope(e);
-         frb.fact(e, [body], AType(){ return functionType(transType(tp), typeof(body)); });
-         collectParts(e, frb);
-     frb.leaveScope(e);
+void collect(current: (Expression) `fun <Id name> : <Type tp> { <Expression body> }`, TBuilder tb) {   
+     tb.define("<name>", variableId(), name, defType(transType(tp)));
+     tb.enterScope(current);
+         tb.calculate("function declaration", current, [body], AType(){ return functionType(transType(tp), getType(body)); });
+         collectParts(current, tb);
+     tb.leaveScope(current);
 }
 
-void collect(e: (Expression) `let <Id name> : <Type tp> = <Expression exp1> in <Expression exp2> end`, FRBuilder frb) {  
-     frb.enterScope(e);
-         frb.define("<name>", variableId(), name, defType(transType(tp)));
-         frb.fact(e, [exp2], AType() { return typeof(exp2); } );
-         collectParts(e, frb);  
-     frb.leaveScope(e);
+// ---- let
+
+void collect(current: (Expression) `let <Id name> : <Type tp> = <Expression exp1> in <Expression exp2> end`, TBuilder tb) {  
+     tb.enterScope(current);
+         tb.define("<name>", variableId(), name, defType(transType(tp)));
+         tb.calculate("let", current, [exp2], AType() { return getType(exp2); } );
+         collectParts(current, tb);  
+     tb.leaveScope(current);
 }
 
-// ----  Collect uses & requirements ------------------------------------
-
+// ---- identifier
  
-void collect(e: (Expression) `<Id name>`,  FRBuilder frb){
-     frb.use(name, {variableId()});
+void collect(current: (Expression) `<Id name>`,  TBuilder tb){
+     tb.use(name, {variableId()});
 }
 
-void collect(e: (Expression) `<Expression exp1> (<Expression exp2>)`, FRBuilder frb) { 
-     frb.require("application", e, [exp1, exp2],
-         () {  if(functionType(tau1, tau2) := typeof(exp1)){
-                  equal(typeof(exp2), tau1, onError(exp2, "Incorrect type of actual parameter"));
-                  fact(e, tau2);
+// ---- function application
+
+void collect(current: (Expression) `<Expression exp1> (<Expression exp2>)`, TBuilder tb) { 
+     tb.require("application", current, [exp1, exp2],
+         () {  if(functionType(tau1, tau2) := getType(exp1)){
+                  equal(getType(exp2), tau1, onError(exp2, "Incorrect type of actual parameter"));
+                  fact(current, tau2);
                } else {
                   reportError(exp1, "Function type expected");
                }
             });
-     collectParts(e, frb);
+     collectParts(current, tb);
 }
 
-void collect(e: (Expression) `if <Expression cond> then <Expression thenPart> else <Expression elsePart> fi`, FRBuilder frb){
-     frb.require("if", e, [cond, thenPart, elsePart],
-         () { equal(typeof(cond), boolType(), onError(cond, "Condition"));
-              equal(typeof(thenPart), typeof(elsePart), onError(e, "thenPart and elsePart should have same type"));
-              fact(e, typeof(thenPart));
+// ---- if-then-else
+
+void collect(current: (Expression) `if <Expression cond> then <Expression thenPart> else <Expression elsePart> fi`, TBuilder tb){
+     tb.calculate("if", current, [cond, thenPart, elsePart],
+         () { equal(getType(cond), boolType(), onError(cond, "Condition"));
+              equal(getType(thenPart), getType(elsePart), onError(current, "thenPart and elsePart should have same type"));
+              return getType(thenPart);
             }); 
-      collectParts(e, frb);
+      collectParts(current, tb);
 }
 
-void collect(e: (Expression) `<Expression lhs> + <Expression rhs>`, FRBuilder frb){
-     frb.require("addition", e, [lhs, rhs],
-         () { equal(typeof(lhs), intType(), onError(lhs, "Lhs of +"));
-              equal(typeof(rhs), intType(), onError(rhs, "Rhs of +"));
-              fact(e, intType());
+// ---- addition
+
+void collect(current: (Expression) `<Expression lhs> + <Expression rhs>`, TBuilder tb){
+     tb.calculate("addition", current, [lhs, rhs],
+         () { equal(getType(lhs), intType(), onError(lhs, "Lhs of +"));
+              equal(getType(rhs), intType(), onError(rhs, "Rhs of +"));
+              return intType();
             });
-      collectParts(e, frb);
+      collectParts(current, tb);
 } 
 
-void collect(e: (Expression) `<Expression lhs> && <Expression rhs>`, FRBuilder frb){
-     frb.require("and", e, [lhs, rhs],
-         () { equal(typeof(lhs), boolType(), onError(lhs, "Lhs of &&"));
-              equal(typeof(rhs), boolType(), onError(rhs, "Rhs of &&"));
-              fact(e, intType());
+// ---- and
+
+void collect(current: (Expression) `<Expression lhs> && <Expression rhs>`, TBuilder tb){
+     tb.calculate("and", current, [lhs, rhs],
+         () { equal(getType(lhs), boolType(), onError(lhs, "Lhs of &&"));
+              equal(getType(rhs), boolType(), onError(rhs, "Rhs of &&"));
+              return intType();
             });
-      collectParts(e, frb);
+      collectParts(current, tb);
 } 
 
-void collect(e :(Expression) `( <Expression exp> )`, FRBuilder frb){
-     frb.fact(e, [exp], AType(){ return typeof(exp); });
-     collectParts(e, frb);
+// ---- brackets
+
+void collect(current: (Expression) `( <Expression exp> )`, TBuilder tb){
+     tb.calculate("bracket", current, [exp], AType(){ return getType(exp); });
+     collectParts(current, tb);
 }
 
-void collect(e: (Expression) `<Boolean boolcon>`, FRBuilder frb){
-     frb.atomicFact(e, boolType());
+// ---- constants
+
+void collect(current: (Expression) `<Boolean boolcon>`, TBuilder tb){
+     tb.fact(current, boolType());
 }
 
-void collect(e: (Expression) `<Integer intcon>`, FRBuilder frb){
-     frb.atomicFact(e, intType());
+void collect(current: (Expression) `<Integer intcon>`, TBuilder tb){
+     tb.fact(current, intType());
 }
 
 // ----  Examples & Tests --------------------------------
 
-private Expression sample(str name) = parse(#Expression, |project://TypePal/src/dtfun/<name>.dt|);
+private Expression sampleDT(str name) = parse(#Expression, |project://typepal-examples/src/dtfun/<name>.dt|);
 
-set[Message] validateDT(str name)
-    = validate(extractFRModel(sample(name)), debug=false).messages;
+TModel dtfunTModel(str name){
+   return dtfunTModel(sampleDT(name));
+}
 
-void testDT() {
-     runTests(|project://TypePal/src/dtfun/tests.ttl|, #Expression);
+TModel dtfunTModel(Expression pt){
+    tb = newTBuilder(pt);
+    collect(pt, tb);
+    return tb.build();
+}
+
+TModel dtfunTModelFromStr(str text){
+    pt = parse(#start[Expression], text).top;
+    return dtfunTModel(pt);
+}
+
+set[Message] dtfunValidate(str name) {
+    tm = dtfunTModel(name);
+    return validate(tm).messages;
+}
+
+void dtfunTest() {
+     runTests([|project://typepal-examples/src/dtfun/tests.ttl|], dtfunTModelFromStr);
 }
