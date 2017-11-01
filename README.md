@@ -1,15 +1,14 @@
-# TypePal
+# TypePal Examples
 
-An experiment in type checker generation. _Warning: work in progress!_
+TypePal if a Rascal-based framework for name and type analysis and is distributed as part of Rascal. You can read the TypePal documentation via the Rascal Tutor.
 
-From the user perspective the basic idea is as follows:
+Here we present some examples how TypePal can be used to type check some simple languages (WORK IN PROGRESS, out of sync with latest TypePal version!):
 
-1. Start with a Rascal grammar of the language of interest, say, MiniML.
-2. Write functions for specific language constructs
-   - `define` captures all defining occurrences of variables and their scopes;
-   - `use` captures all uses of variables;
-   - `require` captures all static requirements on the use of certain constructs, such formal/actual parameter correspondence and the like;
-    - `calculate` to compute a type for a language fragment using earlier calculated types, think of the result type of an operator based on its argument types.
-3. The above functions will populate a fact/requirement model (or `FRModel` for short) of a source program to be type checked.
-4. Apply the `extractFRModel` function to a parsed program (a parse tree). This will apply `define`/`use`/`require`/`calculate` to all relevant places in the tree, will create scopes and use/def information and will also build a collection of constraints. They are all part of the `FRModel`.
-5. Apply `validate` to the `FRModel` resulting from the previous step. `validate` is happy if all constraints can be solved and generates error messages otherwise. `validate` also enhances the original `FRModel` with derived facts that can be used for use/def analysis, interactive display of type information, and the like.
+* _Pico_: the classical  inal language.
+* _PCI_: a tiny Java derivative that illustrates packages, class and interface.
+* _ITFUN_: a functional language with inferred types.
+* _DTFUN_: a functional language with declared ttypes
+* _FJ_: Featherweight Java, another Java derivative.
+* _ModLang_: a simple language with modules
+* _Pascal_: the Pascal language
+
