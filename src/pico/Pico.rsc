@@ -45,8 +45,8 @@ syntax Declaration
     ;  
  
 syntax Type 
-   = natural:"natural" 
-   | string :"string"
+   = "natural" 
+   | "string"
    ;
 
 syntax Statement 
@@ -67,75 +67,64 @@ syntax Expression
 
 // ----  IdRoles, PathLabels and AType ------------------- 
 
-data IdRole
-    = variableId()
-    ;
+data IdRole = variableId();
 
-data AType = intType() |  strType() ;  
+data AType = intType() | strType();  
 
 AType transType((Type) `natural`) = intType();
 AType transType((Type) `string`) = strType(); 
 
-str AType2String(intType()) = "int";
-str AType2String(strType()) = "str";
+str prettyPrintAType(intType()) = "int";
+str prettyPrintAType(strType()) = "str";
 
-// ----  Define -----------------------------------------
+// ----  Collect definitions, uses and requirements -----------------------
  
-void collect(d:(Declaration) `<Id id> : <Type tp>`,  TBuilder tb) {
-     tb.define("<d.id>", variableId(), d, defType(transType(tp)));
+void collect(current:(Declaration) `<Id id> : <Type tp>`,  TBuilder tb) {
+     tb.define("<id>", variableId(), id, defType(transType(tp)));
 }
 
-// ----  Collect uses and requirements ------------------------------------
-
 void collect(current: (Expression) `<Id name>`, TBuilder tb){
-     tb.use(name, {variableId()});;
+     tb.use(name, {variableId()});
 }
 
 void collect(current: (Statement) `<Id var> := <Expression val>`, TBuilder tb){
      tb.use(var, {variableId()});
-     collect(val, tb);
-}
-
-// ----  Requirements ------------------------------------
-
-void collect(current: (Statement) `<Id var> :=  <Expression val>`, TBuilder tb){
-     Tree tvar = var; Tree tval = val;
-     tb.require("assignment", current, [tvar, tval],
-                 (){ equal(getType(var), getType(val), onError(current, "Lhs <var> should have same type as rhs")); });
+     tb.require("assignment", current, [var, val],
+        (){ equal(getType(var), getType(val)) || reportError(current, "Lhs <fmt(var)> should have same type as rhs"); });
      collect(val, tb);
 }
 
 void collect(current: (Statement) `if <Expression cond> then <{Statement ";"}*  thenPart> else <{Statement ";"}* elsePart> fi`, TBuilder tb){
-     tb.require("int_condition", current, [current.cond],
-         () { equal(getType(s.cond), intType(), onError(s.cond, "Condition")); });
-     collectParts(current, tb);
+     tb.require("int_condition", current, [cond],
+        () { equal(getType(cond), intType()) || reportError(cond, "Condition should be `int`, found <fmt(cond)>"); });
+     collect(cond, thenPart, elsePart, tb);
 }
 
 void collect(current: (Statement) `while <Expression cond> do <{Statement ";"}* body> od`, TBuilder tb){
-     tb.require("int_condition", current, [current.cond],
-         () { equal(getType(current.cond), intType(), onError(current.cond, "Condition")); } );
-     collectParts(current, tb);
+     tb.require("int_condition", current, [cond],
+        () { equal(getType(cond), intType()) || reportError(cond, "Condition should be `int`, found <fmt(cond)>"); });
+     collect(cond, body, tb);
 }
 
 void collect(current: (Expression) `<Expression lhs> + <Expression rhs>`, TBuilder tb){
      tb.calculate("addition", current, [lhs, rhs], 
-         AType () { switch([getType(lhs), getType(rhs)]){
-                  case [intType(), intType()]: return intType();
-                  case [strType(), strType()]: return strType();
-                  default:
+        AType () { switch([getType(lhs), getType(rhs)]){
+                   case [intType(), intType()]: return intType();
+                   case [strType(), strType()]: return strType();
+                   default:
                        reportError(current, "Operator `+` cannot be applied to <fmt(lhs)> and <fmt(rhs)>");
-               }
-            });
-     collectParts(current, tb);
+                   }
+                 });
+     collect(lhs, rhs, tb);
 }
 
 void collect(current: (Expression) `<Expression lhs> - <Expression rhs>`, TBuilder tb){
-     tb.require("subtraction", current, [lhs, rhs],
-         () { equal(getType(lhs), intType(), onError(lhs, "Lhs of -"));
-              equal(getType(rhs), intType(), onError(rhs, "Rhs of -"));
-              fact(current, intType());
-            });
-     collectParts(current, tb);
+     tb.calculate("subtraction", current, [lhs, rhs],
+        AType () { equal(getType(lhs), intType()) || reportError(lhs, "Left argument of `-` should be `int`, found <fmt(lhs)>");
+                   equal(getType(rhs), intType()) || reportError(rhs, "Right argument of `-` should be `int`, found <fmt(rhs)>");
+                   return intType();
+                 });
+     collect(lhs, rhs, tb);
 }
  
 void collect(current: (Expression) `<String string>`, TBuilder tb){
