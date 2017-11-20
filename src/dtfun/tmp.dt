@@ -1,1 +1,1 @@
-let x : int = 1 in x && true end
+x

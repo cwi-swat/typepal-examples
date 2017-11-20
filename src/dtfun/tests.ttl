@@ -3,7 +3,7 @@ test Int1 [[ 1 ]]
 test Bool1 [[ true ]]
 test Bool2 [[ false ]]
 
-test Var1 [[ x ]] expect {"Undefined"}
+test Var1 [[ x ]] expect {"Undefined variable `x`"}
 
 test Add1 [[ 1 + 2 ]]
 test Add2 [[ 1 + false ]] expect {"rhs of +"}

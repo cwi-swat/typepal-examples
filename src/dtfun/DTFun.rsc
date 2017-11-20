@@ -71,9 +71,9 @@ AType transType((Type) `int`) = intType();
 AType transType((Type) `bool`) = boolType(); 
 AType transType((Type) `<Type from> -\> <Type to>`) = functionType(transType(from), transType(to)); 
 
-str AType2String(intType()) = "int";
-str AType2String(boolType()) = "bool";
-str AType2String(functionType(AType from, AType to)) = "fun <AType2String(from)> -\> <AType2String(to)>";
+str prettyPrintAType(intType()) = "int";
+str prettyPrintAType(boolType()) = "bool";
+str prettyPrintAType(functionType(AType from, AType to)) = "fun <prettyPrintAType(from)> -\> <prettyPrintAType(to)>";
 
 // ----  function declaration
 
@@ -81,7 +81,7 @@ void collect(current: (Expression) `fun <Id name> : <Type tp> { <Expression body
      tb.define("<name>", variableId(), name, defType(transType(tp)));
      tb.enterScope(current);
          tb.calculate("function declaration", current, [body], AType(){ return functionType(transType(tp), getType(body)); });
-         collectParts(current, tb);
+         collect(body, tb);
      tb.leaveScope(current);
 }
 
@@ -91,7 +91,7 @@ void collect(current: (Expression) `let <Id name> : <Type tp> = <Expression exp1
      tb.enterScope(current);
          tb.define("<name>", variableId(), name, defType(transType(tp)));
          tb.calculate("let", current, [exp2], AType() { return getType(exp2); } );
-         collectParts(current, tb);  
+         collect(exp1, exp2, tb);  
      tb.leaveScope(current);
 }
 
@@ -106,53 +106,53 @@ void collect(current: (Expression) `<Id name>`,  TBuilder tb){
 void collect(current: (Expression) `<Expression exp1> (<Expression exp2>)`, TBuilder tb) { 
      tb.require("application", current, [exp1, exp2],
          () {  if(functionType(tau1, tau2) := getType(exp1)){
-                  equal(getType(exp2), tau1, onError(exp2, "Incorrect type of actual parameter"));
+                  equal(getType(exp2), tau1) || reportError(exp2, "Incorrect type of actual parameter");
                   fact(current, tau2);
                } else {
                   reportError(exp1, "Function type expected");
                }
             });
-     collectParts(current, tb);
+     collect(exp1, exp2, tb);
 }
 
 // ---- if-then-else
 
 void collect(current: (Expression) `if <Expression cond> then <Expression thenPart> else <Expression elsePart> fi`, TBuilder tb){
      tb.calculate("if", current, [cond, thenPart, elsePart],
-         () { equal(getType(cond), boolType(), onError(cond, "Condition"));
-              equal(getType(thenPart), getType(elsePart), onError(current, "thenPart and elsePart should have same type"));
-              return getType(thenPart);
-            }); 
-      collectParts(current, tb);
+        AType () { equal(getType(cond), boolType()) || reportError(cond, "Condition");
+                   equal(getType(thenPart), getType(elsePart)) || reportError(current, "thenPart and elsePart should have same type");
+                   return getType(thenPart);
+                 }); 
+      collect(cond, thenPart, elsePart, tb);
 }
 
 // ---- addition
 
 void collect(current: (Expression) `<Expression lhs> + <Expression rhs>`, TBuilder tb){
      tb.calculate("addition", current, [lhs, rhs],
-         () { equal(getType(lhs), intType(), onError(lhs, "Lhs of +"));
-              equal(getType(rhs), intType(), onError(rhs, "Rhs of +"));
-              return intType();
-            });
-      collectParts(current, tb);
+        AType () { equal(getType(lhs), intType()) || reportError(lhs, "Lhs of +");
+                   equal(getType(rhs), intType()) || reportError(rhs, "Rhs of +");
+                   return intType();
+                 });
+      collect(lhs, rhs, tb);
 } 
 
 // ---- and
 
 void collect(current: (Expression) `<Expression lhs> && <Expression rhs>`, TBuilder tb){
      tb.calculate("and", current, [lhs, rhs],
-         () { equal(getType(lhs), boolType(), onError(lhs, "Lhs of &&"));
-              equal(getType(rhs), boolType(), onError(rhs, "Rhs of &&"));
-              return intType();
-            });
-      collectParts(current, tb);
+        AType () { equal(getType(lhs), boolType()) || reportError(lhs, "Lhs of &&");
+                   equal(getType(rhs), boolType()) || reportError(rhs, "Rhs of &&");
+                   return intType();
+                 });
+      collect(lhs, rhs, tb);
 } 
 
 // ---- brackets
 
 void collect(current: (Expression) `( <Expression exp> )`, TBuilder tb){
      tb.calculate("bracket", current, [exp], AType(){ return getType(exp); });
-     collectParts(current, tb);
+     collect(exp, tb);
 }
 
 // ---- constants
@@ -176,7 +176,8 @@ TModel dtfunTModel(str name){
 TModel dtfunTModel(Expression pt){
     tb = newTBuilder(pt);
     collect(pt, tb);
-    return tb.build();
+    tm = tb.build();
+    return validate(tm);
 }
 
 TModel dtfunTModelFromStr(str text){
@@ -186,7 +187,7 @@ TModel dtfunTModelFromStr(str text){
 
 set[Message] dtfunValidate(str name) {
     tm = dtfunTModel(name);
-    return validate(tm).messages;
+    return tm.messages;
 }
 
 void dtfunTest() {
