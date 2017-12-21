@@ -1,0 +1,27 @@
+test M1 [[
+    module M
+    
+    class A {
+        int f;
+    }
+    
+    class B {
+        A a;
+        
+        int g(int p) = a.f + p;
+    }
+]]
+
+test M2 [[
+    module M
+    
+    class A {
+        int f(int p) = p + 2;
+    }
+    
+    class B {
+        A a;
+        
+        int f(int p) = a.f(p) + p;
+    }
+]]

@@ -4,3 +4,11 @@ test S1 [[
         int f (int b) = i + b;
     }
 ]]
+
+test S2 [[
+    class C {
+        int i;
+        str s;
+        int f () = i + s;
+    }
+]] expect { "+ is not defined for `intType()` and `strType()`" }

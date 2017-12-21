@@ -148,3 +148,9 @@ bool testClasses(bool debug = false, PathConfig pcfg = pathConfig()) {
         return commonTModelFromTree(t, pcfg, debug);
     });
 }
+
+bool testModules(bool debug = false, PathConfig pcfg = pathConfig()) {
+    return runTests([|project://typepal-examples/src/smallOO/modules.ttl|], #start[Module], TModel (Tree t) {
+        return commonTModelFromTree(t, pcfg, debug);
+    });
+}
