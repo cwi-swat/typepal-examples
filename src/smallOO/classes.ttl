@@ -1,0 +1,6 @@
+test S1 [[
+    class C {
+        int i;
+        int f (int b) = i + b;
+    }
+]]
