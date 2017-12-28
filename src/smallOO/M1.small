@@ -1,0 +1,11 @@
+module M1
+    
+    class A {
+        int f;
+    }
+    
+    class B {
+        A a;
+        
+        int g(int p) = a.f + p;
+    }

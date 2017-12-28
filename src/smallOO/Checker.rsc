@@ -20,53 +20,70 @@ data IdRole
     | classId()
     ;
 
+AType convertType((Type) `int`) = intType();
+AType convertType((Type) `str`) = strType();
+AType convertType((Type) `<Identifier className>`) = classType("<className>");
+
+// ---- collect ---------------------------------------------------------------
 
 void collect(current:(Module)`module <Identifier _> <Import* _> <Declaration* decls>`, TBuilder tb) {
     collect(decls, tb);
 }
 
 void collect(current:(Declaration)`class <Identifier className> { <Declaration* decls> }`, TBuilder tb) {
-    tb.define("<className>", classId(), className, defType(classType("<className>")));
+    tb.define("<className>", classId(), current, defType(classType("<className>")));
     tb.enterScope(current); {
         collect(decls, tb);
     }
     tb.leaveScope(current);
 }
 
-
 void collect(current:(Declaration)`<Type returnType> <Identifier functionName> ( <{Parameter ","}* params> ) = <Expression returnExpression> ;`, TBuilder tb) {
-    fStub = tb.newTypeVar();
-    tb.define("<functionName>", functionId(), functionName, defType([returnType] + [p.name | p <- params], AType() { return getType(fStub); }));
+    classScope = tb.getScope();
+    
     tb.enterScope(current); {
-        tb.require("function type", functionName, [returnType] + [p.name | p <- params], () {
-            retType = getType(returnType);
-            formals = atypeList([getType(p.name) | p <- params]);
-            unify(fStub, functionType(retType, formals)) || reportError(current, "Could not calculcate function type");
+        retType = convertType(returnType);
+        tb.defineInScope(classScope, "<functionName>", functionId(), functionName, defType([p.name | p <- params], 
+           AType() {
+                     formals = atypeList([getType(p.name) | p <- params]);
+                     return functionType(retType, formals); 
+                    }));
+     
+        tb.require("function return expression", returnExpression, [returnExpression], () {
+            equal(retType, getType(returnExpression)) || reportError(returnExpression, "Return expression is not the same type as the return type (<fmt(returnExpression)> instead of (<fmt(retType)>)");
         });
-        tb.require("function return expression", returnExpression, [returnExpression, returnType], () {
-            equal(getType(returnType), getType(returnExpression)) || reportError(returnExpression, "Return expression is not the same type as the return type (<fmt(returnExpression)> instead of (<fmt(returnType)>)");
-        });
-        collect(returnType, params, returnExpression, tb);
+        collect(params, returnExpression, tb);
     }
     tb.leaveScope(current);
 }
 
 void collect(current:(Declaration)`<Type fieldType> <Identifier fieldName>;`, TBuilder tb) {
-    tb.define("<fieldName>", fieldId(), fieldName, defType([fieldType], AType() { return getType(fieldType); }));
-    collect(fieldType, tb);
+    tb.define("<fieldName>", fieldId(), fieldName, defType(convertType(fieldType)));
 }
 
 void collect(current:(Parameter)`<Type paramType> <Identifier paramName>`, TBuilder tb) {
-    tb.define("<paramName>", parameterId(), paramName, defType([paramType], AType() { return getType(paramType); }));
-    collect(paramType, tb);
+    tb.define("<paramName>", parameterId(), paramName, defType(convertType(paramType)));
 }
 
 void collect(current:(Expression)`<Identifier id>`, TBuilder tb) {
-    tb.use(id, {fieldId(), parameterId()});
+    tb.use(id, {fieldId(), parameterId()});  // <=== Hier functionId() toevoegen? Dan zijn de aparte uses in function calls niet meer nodig.
 }
 
 void collect(current:(Expression)`<Expression lhs> . <Identifier id>`, TBuilder tb) {
-    throw "How to handle these scoped use?";
+    //throw "How to handle these scoped use?";
+    scope = tb.getScope();
+    tb.calculate("field selection", current, [lhs],
+       AType() { tp = getType(lhs);
+                 if(classType(str nm) := tp) {
+                    for(<Key outerScope, str className, classId(), Key classScope, DefInfo defInfo> <- getDefinitions(nm, scope, {classId()})){
+                        return getType("<id>", classScope, {fieldId()});
+                    }
+                    reportError(lhs, "No class type found for <fmt("<lhs>")>");
+                 } else {
+                    reportError(lhs, "class type expected, found <fmt(tp)>");
+                 }
+                 }); 
+    collect(lhs, tb);           
 }
 
 void collect(current:(Expression)`<Integer _>`, TBuilder tb) {
@@ -79,14 +96,34 @@ void collect(current:(Expression)`<String _>`, TBuilder tb) {
 
 
 void collect(current:(Expression)`<Identifier functionName> ( <{Expression ","}* params> )`, TBuilder tb) {
-    tb.use(functionName, {functionId()});
+    tb.use(functionName, {functionId()});  // <==
     collectFunctionCall(functionId, params, tb);
 }
 
 void collect(current:(Expression)`<Expression lhs> . <Identifier functionName> ( <{Expression ","}* params> )`, TBuilder tb) {
-    throw "How to handle these scoped use?";
-    tb.use(functionName, {functionId()});
-    collectFunctionCall(functionId, params, tb);
+
+    scope = tb.getScope();
+    the_params = [p | p <- params];     // hack as long as concrete lists do not work properly.
+    tb.calculate("method call", current, lhs + the_params,
+       AType() { tp = getType(lhs);
+                 if(classType(str nm) := tp) {
+                    for(<Key outerScope, str className, classId(), Key classScope, DefInfo defInfo> <- getDefinitions(nm, scope, {classId()})){
+                        paramTypes = atypeList([getType(e) | e <- params]);
+                        funType = getType("<functionName>", classScope, {functionId()});
+                        switch (funType) {
+                            case overloadedAType({*_,<_,_, functionType(AType ret, paramTypes)>}) : return ret;
+                            case functionType(AType ret, paramTypes): return ret;
+                            default: reportError(current, "No function can be found that accepts these parameters (<fmt(paramTypes)>)");
+                        }
+                    }
+                    reportError(lhs, "No class type found for <fmt("<lhs>")>");
+                 } else {
+                    reportError(lhs, "class type expected, found <fmt(tp)>");
+                 }
+                 }); 
+    collect(lhs,  params, tb);  
+    
+    tb.use(functionName, {functionId()});  // <==
 }
 
 void collectFunctionCall(Identifier functionName, {Expression ","}* params, TBuilder tb) {
@@ -101,7 +138,6 @@ void collectFunctionCall(Identifier functionName, {Expression ","}* params, TBui
     collect(params, tb);
 }
 
-
 AType infixPlus(intType(), intType(), _) = intType();
 
 AType infixPlus(strType(), strType(), _) = strType();
@@ -110,7 +146,6 @@ default AType infixPlus(AType lhs, AType rhs, Tree context) {
     reportError(context, "+ is not defined for <fmt(lhs)> and <fmt(rhs)>");
 }
 
-
 void collect(current:(Expression)`<Expression lhs> + <Expression rhs>`, TBuilder tb) {
     tb.calculate("expression type",current, [lhs, rhs], AType() {
         return infixPlus(getType(lhs), getType(rhs), current);
@@ -118,22 +153,14 @@ void collect(current:(Expression)`<Expression lhs> + <Expression rhs>`, TBuilder
     collect(lhs, rhs, tb);
 }
 
-void collect(current:(Type)`int`, TBuilder tb) {
-    tb.fact(current, intType()); 
-}
-
-void collect(current:(Type)`str`, TBuilder tb) {
-    tb.fact(current, strType()); 
-}
-void collect(current:(Type)`<Identifier className>`, TBuilder tb) {
-    tb.use(current, {classId()});
-}
-
-
 /***********************************************
  * Test infra
  ***********************************************/
- 
+
+public PathConfig getDefaultPathConfig() = pathConfig(   
+        srcs = [|project://typepal-examples/src|
+               ]);
+               
 TModel commonTModelFromTree(Tree pt, PathConfig pcfg, bool debug){
     if(pt has top) pt = pt.top;
     tb = newTBuilder(pt, debug=debug);
@@ -141,6 +168,15 @@ TModel commonTModelFromTree(Tree pt, PathConfig pcfg, bool debug){
     tm = tb.build();
     tm = validate(tm, debug=debug);
     return tm;
+}
+
+TModel commonTModelFromName(str mname, PathConfig pcfg, bool debug){
+    pt = parse(#start[Module], |project://typepal-examples/src/smallOO/<mname>.small|).top;
+    return commonTModelFromTree(pt, pcfg,debug);
+}
+
+list[Message] validateModule(str mname, bool debug=false) {
+    return commonTModelFromName(mname, getDefaultPathConfig(), debug).messages;
 }
 
 bool testClasses(bool debug = false, PathConfig pcfg = pathConfig()) {

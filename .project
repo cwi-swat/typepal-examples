@@ -3,6 +3,7 @@
 	<name>typepal-examples</name>
 	<comment></comment>
 	<projects>
+		<project>TypePal</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

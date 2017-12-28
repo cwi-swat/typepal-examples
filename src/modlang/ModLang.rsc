@@ -81,8 +81,8 @@ data AType
     | functionType(AType from, AType to)            // function type
     ;
     
-str AType2String(intType()) = "int";
-str AType2String(strType()) = "str";
+str prettyPrintAType(intType()) = "int";
+str prettyPrintAType(strType()) = "str";
 
 // ----  Define --------------------------------------------------------
 
