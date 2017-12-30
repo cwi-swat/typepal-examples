@@ -1,0 +1,14 @@
+test M1 [[
+    module A
+    
+    var x = 1;
+    fun int f (int p) = x + p;
+    
+    
+    module B
+    
+    import A;
+    
+    fun int f2(int p) = f(p) + 2;
+
+]]
