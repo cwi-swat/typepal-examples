@@ -139,7 +139,7 @@ void collect(current: (Expression) `<Natural natcon>`, TBuilder tb){
 
 public Program samplePico(str name) = parse(#Program, |project://typepal-examples/src/pico/<name>.pico|);
                      
-set[Message] validatePico(str name) {
+list[Message] validatePico(str name) {
     Tree pt = samplePico(name);
     tb = newTBuilder(pt);
     collect(pt, tb);
