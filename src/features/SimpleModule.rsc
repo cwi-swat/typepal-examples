@@ -107,7 +107,7 @@ void collect(current:(Expression)`<String _>`, TBuilder tb) {
 }
 
 void collect(current:(Expression)`<Id use>`, TBuilder tb) {
-    tb.use(use, {parameterId(), variableId()});
+    tb.use(use, {parameterId(), variableId(), functionId()});
 }
 
 void collect(current:(Expression)`<Expression lhs> + <Expression rhs>`, TBuilder tb) {
@@ -142,8 +142,14 @@ TModel commonTModelFromTree(Tree pt, PathConfig pcfg, bool debug){
     tb = newTBuilder(pt, debug=debug);
     collect(pt, tb);
     tm = tb.build();
+    tm = resolvePath(tm);
     tm = validate(tm, debug=debug);
     return tm;
+}
+
+TModel commonTModelFromName(str mname, PathConfig pcfg, bool debug){
+    pt = parse(#start[TestModules], |project://typepal-examples/src/features/<mname>.simple|).top;
+    return commonTModelFromTree(pt, pcfg, debug);
 }
 
 bool testModules(bool debug = false, PathConfig pcfg = pathConfig()) {
