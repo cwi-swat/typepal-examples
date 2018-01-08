@@ -12,3 +12,23 @@ test M1 [[
     fun int f2(int p) = f(p) + 2;
 
 ]]
+
+test M2 [[
+    module A
+    
+    fun int f (int p) = p + 2;
+
+    module B
+    
+    var x = 1;
+    fun int f2 (int p) = p + 3;
+    
+    
+    module C
+    
+    import A;
+    import B;
+    
+    fun int f3(int p) = f(p) + f2(p);
+
+]]
