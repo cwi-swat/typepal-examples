@@ -60,6 +60,17 @@ data PathRole
 AType convertType((Type)`int`) = intType();
 AType convertType((Type)`str`) = strType();
 
+Accept isAcceptablePath(TModel tm, Key defScope, Key def, Use use, PathRole pathRole) {
+    try 
+        // if there are variables by that name, skip this module
+        if (_ <- getDefinitions(use.id, defScope, {variableId()})) {
+            return ignoreContinue();
+        }
+    catch:
+        ;
+    return acceptBinding();
+}
+
 void collect(current:(TestModules)`<Module* modules>`, TBuilder tb) {
     collect(modules, tb);
 }
