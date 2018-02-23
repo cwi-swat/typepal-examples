@@ -5,7 +5,7 @@ extend analysis::typepal::TypePal;
 
 extend lang::std::Layout;
 
-syntax Expression 
+start syntax Expression 
     = Integer i
     | String s
     | Id use
@@ -22,6 +22,9 @@ lexical Integer = [0-9]+ !>> [0-9];
 
 lexical String = [\"] ![\"]* [\"];
 
+
+data TypePalConfig(set[IdRole] useRoles = {});
+
 data AType
     = intType()
     | strType()
@@ -30,8 +33,9 @@ data AType
 AType convertType((Type)`int`) = intType();
 AType convertType((Type)`str`) = strType();
 
+str prettyPrintAType(intType()) = "int";
+str prettyPrintAType(strType()) = "str";
 
-str BASIC_EXPRESSION_USE_ROLES = "___basicExpressionUseRoles";
 
 void collect(current:(Expression)`<Integer _>`, TBuilder tb) {
     tb.fact(current, intType());
@@ -42,15 +46,11 @@ void collect(current:(Expression)`<String _>`, TBuilder tb) {
 }
 
 void collect(current:(Expression)`<Id use>`, TBuilder tb) {
-    if (set[IdRole] roles := tb.top(BASIC_EXPRESSION_USE_ROLES)) {
-        tb.use(use, roles);
-    }
-    else {
-        tb.reportError(current, "Cannot lookup relevant IdRoles");
-    }
+    tb.use(use, tb.getConfig().useRoles);
 }
 
 AType infixPlus(intType(), intType(), Tree current) = intType();
+AType infixPlus(strType(), strType(), Tree current) = strType();
 
 default AType infixPlus(AType lhsType, AType rhsType, Tree current) {
     reportError(current, "+ not defined between <fmt(lhsType)> and <fmt(rhsType)>");
@@ -61,4 +61,20 @@ void collect(current:(Expression)`<Expression lhs> + <Expression rhs>`, TBuilder
         return infixPlus(getType(lhs), getType(rhs), current);
     });
     collect(lhs, rhs, tb);
+}
+
+
+TModel expressionTModule(Tree pt, bool debug){
+    if(pt has top) pt = pt.top;
+    tb = newTBuilder(pt, debug=debug);
+    collect(pt, tb);
+    tm = tb.build();
+    tm = validate(tm, debug=debug);
+    return tm;
+}
+
+bool testExpressions(bool debug = false) {
+    return runTests([|project://typepal-examples/src/features/tests/expressions.ttl|], #start[Expression], TModel (Tree t) {
+        return expressionTModule(t, debug);
+    });
 }

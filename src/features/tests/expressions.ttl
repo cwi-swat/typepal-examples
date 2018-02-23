@@ -1,0 +1,5 @@
+test EX1 [[ 1 + 1 ]]
+test EX2 [[ "a" + "b" ]]
+
+test ER1 [[ "a" + 1 ]] expect { "+ not defined between `str` and `int`" }
+test ER2 [[ 3 + 1 + "c" ]] expect { "+ not defined between `int` and `str`" }
