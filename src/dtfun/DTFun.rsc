@@ -16,6 +16,7 @@ module dtfun::DTFun
 
 extend analysis::typepal::TypePal;
 extend analysis::typepal::TestFramework;
+import analysis::typepal::TypePalConfig;
 
 // ----  DTFun syntax ------------------------------------
 
@@ -50,7 +51,7 @@ start syntax Expression
           | Expression lhs "&&" Expression rhs  
           )
    | "fun" Id name ":" Type tp "{" Expression exp "}"
-   | Expression exp1 "(" Expression exp2  ")"
+   |  Expression exp1 "(" Expression exp2  ")"
    | "let" Id name ":" Type tp "=" Expression exp1 "in" Expression exp2 "end"
    | "if" Expression cond "then" Expression thenPart "else" Expression elsePart "fi" 
    ;
@@ -78,10 +79,10 @@ str prettyPrintAType(functionType(AType from, AType to)) = "fun <prettyPrintATyp
 // ----  function declaration
 
 void collect(current: (Expression) `fun <Id name> : <Type tp> { <Expression body> }`, TBuilder tb) {   
-     tb.define("<name>", variableId(), name, defType(transType(tp)));
      tb.enterScope(current);
-         tb.calculate("function declaration", current, [body], AType(){ return functionType(transType(tp), getType(body)); });
-         collect(body, tb);
+        tb.define("<name>", variableId(), name, defType(transType(tp)));
+        tb.calculate("function declaration", current, [body], AType(){ return functionType(transType(tp), getType(body)); });
+        collect(body, tb);
      tb.leaveScope(current);
 }
 
@@ -173,7 +174,7 @@ TModel dtfunTModel(str name){
    return dtfunTModel(sampleDT(name));
 }
 
-TModel dtfunTModel(Expression pt){
+TModel dtfunTModelFromTree(Tree pt){
     tb = newTBuilder(pt);
     collect(pt, tb);
     tm = tb.build();
@@ -185,11 +186,11 @@ TModel dtfunTModelFromStr(str text){
     return dtfunTModel(pt);
 }
 
-set[Message] dtfunValidate(str name) {
+list[Message] dtfunValidate(str name) {
     tm = dtfunTModel(name);
     return tm.messages;
 }
 
-void dtfunTest() {
-     runTests([|project://typepal-examples/src/dtfun/tests.ttl|], dtfunTModelFromStr);
+void dtfunTests() {
+     runTests([|project://typepal-examples/src/dtfun/tests.ttl|], #Expression, dtfunTModelFromTree);
 }

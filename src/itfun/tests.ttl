@@ -6,12 +6,12 @@ test Bool2 [[ false ]]
 test Var1 [[ x ]] expect {"Undefined"}
 
 test Add1 [[ 1 + 2 ]]
-test Add2 [[ 1 + false ]] expect {"Rhs of +, expected `int`, found `bool`"}
-test Add3 [[ false + 1 ]] expect {"Lhs of +, expected `int`, found `bool`"}
+test Add2 [[ 1 + false ]] expect {"No version of + is applicable for `int` and `bool`"}
+test Add3 [[ false + 1 ]] expect {"No version of + is applicable for `bool` and `int`"}
 
 test And1 [[ true && false ]]
-test And2 [[ true && 1 ]] expect {"Rhs of &&"}
-test And3 [[ 1 && false ]] expect {"Lhs of &&"}
+test And2 [[ true && 1 ]] expect {"Expected `bool`, found `int`"}
+test And3 [[ 1 && false ]] expect {"Expected `bool`, found `int`"}
 
 test Bracket1 [[ (1) ]]
 test Bracket2 [[ (true) ]]

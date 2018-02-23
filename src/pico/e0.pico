@@ -1,4 +1,4 @@
 begin
-    declare n : natural, n : natural;
+    declare n : natural, m : natural;
     n := 1
 end

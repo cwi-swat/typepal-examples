@@ -10,8 +10,8 @@ test Add3 [[ module A { def x = 1 + "a"; } ]] expect {"No version of +"}
 test Add4 [[ module A { def x = "a" + 2; } ]] expect {"No version of +"}
 
 test Mul1 [[ module A { def x = 1 * 2; } ]]
-test Mul2 [[ module A { def x = 1 * "a"; } ]] expect {"rhs of *"}
-test Mul3 [[ module A { def x = "a" * 2; } ]] expect {"lhs of *"}
+test Mul2 [[ module A { def x = 1 * "a"; } ]] expect {"Expected `int`"}
+test Mul3 [[ module A { def x = "a" * 2; } ]] expect {"Expected `int`"}
 
 test Bracket1 [[ module A { def x = (1); }  ]]
 test Bracket2 [[ module A { def x = ("a"); }  ]]

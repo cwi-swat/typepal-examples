@@ -12,8 +12,8 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 }
 module modlang::ModLang
 
-extend typepal::TypePal;
-extend typepal::TestFramework;
+extend analysis::typepal::TypePal;
+extend analysis::typepal::TestFramework;
 
 // ----  ModLang syntax ----------------------------------
 
@@ -33,7 +33,7 @@ lexical WhitespaceAndComment
 //   | @category="Comment" ws3: "{" ![\n}]*  "}"$
    ;
 
-syntax Program 
+start syntax Program 
     = ModuleDecl* modules
     ;
 
@@ -58,8 +58,8 @@ syntax Expression
    | String strcon
    | bracket "(" Expression e ")"     
    | abstraction: "fun" Id id "{" Expression exp "}"
-   | application: Expression exp1 "(" Expression exp2  ")" 
-   | left Expression exp1 "*" Expression exp2 
+   | left application: Expression exp1 "(" Expression exp2  ")" 
+   > left Expression exp1 "*" Expression exp2 
    > left Expression exp1 "+" Expression exp2 
    ;
 
@@ -67,12 +67,11 @@ syntax Expression
      
 data IdRole
     = moduleId()
-    | variableId()
     | parameterId()
     ;
     
 data PathRole
-    = importsPath()
+    = importPath()
     ;
 
 data AType   
@@ -84,96 +83,124 @@ data AType
 str prettyPrintAType(intType()) = "int";
 str prettyPrintAType(strType()) = "str";
 
-// ----  Define --------------------------------------------------------
+// ----  Collect facts & constraints ------------------------------------
 
-Tree define(ModuleDecl md, Tree scope, FRBuilder sg) {
-     sg.define(scope, "<md.mid>", moduleId(), md.mid, noDefInfo());
-     return scope;
+void collect(current: (ModuleDecl) `module <ModId mid> { <Decl* decls> }`, TBuilder tb) {
+     tb.define("<mid>", moduleId(), mid, noDefInfo());
+     //tb.enterScope(current);
+        collect(decls, tb);
+     //tb.leaveScope(current);
 }
 
-Tree define(e: (Expression) `fun <Id id> { <Expression body> }`, Tree scope, FRBuilder frb) {   
-     sigma1 = frb.newTypeVar(e); 
-     sigma2 = frb.newTypeVar(e);
-     frb.define(scope, "<id>", parameterId(), id, defType(sigma1));
-     frb.atomicFact(e, functionType(sigma1, sigma2));
-     frb.atomicFact(body, sigma2);
-     return scope;
+void collect(current: (ImportDecl) `import <ModId mid> ;`, TBuilder tb){
+     tb.useViaPath(mid, {moduleId()}, importPath());
 }
 
-Tree define(vd: (VarDecl) `def <Id id> = <Expression expression> ;`, Tree scope, FRBuilder sg)     {
-     sg.define(scope, "<id>", variableId(), id, defType([expression], AType(){ return typeof(expression); })); // <<<
-     return expression;
+void collect(current: (Expression) `fun <Id id> { <Expression body> }`, TBuilder tb) {
+     tb.enterScope(current);
+        tau1 = tb.newTypeVar(id); 
+        tau2 = tb.newTypeVar(body);
+     
+        tb.define("<id>", parameterId(), id, defType(tau1));
+        tb.calculate("function declaration", current, [body],  
+            AType() {
+                     res = functionType(tau1, tau2);
+                     println("res = <res>");
+                     return res;
+                   });
+        collect(body, tb);
+     tb.leaveScope(current);
 }
 
-// ---- Collect uses & requirements ------------------------------------
-
-void collect(ImportDecl d, Tree scope, FRBuilder sg){
-     sg.use_ref(scope, d.mid, {moduleId()}, importsPath());
+void collect(current: (VarDecl) `def <Id id> = <Expression expression> ;`, TBuilder tb)     {
+     tb.define("<id>", variableId(), id, defType([expression], AType(){ return getType(expression); })); // <<<
+     collect(expression, tb);
 }
 
-void collect(exp: (Expression) `<Id name>`, Tree scope,  FRBuilder sg){
-     println("Use: <name>, <scope>");
-     sg.use(scope, name, {variableId(), parameterId()});
+void collect(current: (Expression) `<Id name>`,  TBuilder tb){
+     tb.use(name, {variableId(), parameterId()});
 }
 
-void collect(e: (Expression) `<Expression exp1>(<Expression exp2>)`, Tree scope, FRBuilder frb) { 
-     tau1 = frb.newTypeVar(e); 
-     tau2 = frb.newTypeVar(e); 
-     frb.require("application", e, [exp1, exp2],
-         () { if(unify(functionType(tau1, tau2), typeof(exp1))){ 
-                 unify(typeof(exp2), tau1, onError(exp2, "Incorrect type of actual parameter"));
-                 fact(e, tau2);   
-              } else {
-                 onError(exp1, "Function type expected");
-              }
+void collect(current: (Expression) `<Expression exp1>(<Expression exp2>)`, TBuilder tb) { 
+     tau1 = tb.newTypeVar(exp1); 
+     tau2 = tb.newTypeVar(exp2); 
+     tb.calculateEager("application", current, [exp1, exp2],
+        AType () { 
+                   unify(functionType(tau1, tau2), getType(exp1)) || reportError(exp1, "Function type expected, found <fmt(exp1)>");
+                   unify(getType(exp2), tau1) || reportError(exp2, "Expected <fmt(tau1)> as argument,  found <fmt(exp2)>");
+                   return tau2;
             });
+     collect(exp1, exp2, tb);
 }
 
-void collect(e: (Expression) `<Expression lhs> + <Expression rhs>`, Tree scope, FRBuilder frb){
-     frb.calculate("addition", e, [lhs, rhs],
-         AType () { targs = listType([typeof(lhs), typeof(rhs)]);
-                    if(unify(targs, listType([intType(), intType()]))) return intType();
-                    if(unify(targs, listType([strType(), strType()]))) return strType();
-                    reportError(e, "No version of + is applicable", [lhs, rhs]);
+void collect(current: (Expression) `<Expression lhs> + <Expression rhs>`, TBuilder tb){
+     tb.calculate("addition", current, [lhs,rhs],
+         AType () { 
+                    targs = atypeList([getType(lhs), getType(rhs)]);
+                    if(unify(targs, atypeList([intType(), intType()]))) return intType();
+                    if(unify(targs, atypeList([strType(), strType()]))) return strType();
+                    reportError(current, "No version of + is applicable for <fmt([lhs, rhs])>");
                   });
+     collect(lhs, rhs, tb);
 }
 
-void collect(e: (Expression) `<Expression lhs> * <Expression rhs>`, Tree scope, FRBuilder frb){
-     frb.require("multiplication", e, [lhs, rhs],
-         () { unify(typeof(lhs), intType(), onError(lhs, "Lhs of *"));
-              unify(typeof(rhs), intType(), onError(rhs, "Rhs of *"));
-              fact(e, intType());
-            });
+void collect(current: (Expression) `<Expression lhs> * <Expression rhs>`, TBuilder tb){
+     tb.calculate("multiplication", current, [lhs, rhs],
+        AType () { unify(getType(lhs), intType()) || reportError(lhs, "Expected `int`, found <fmt(lhs)>");
+                   unify(getType(rhs), intType()) || reportError(rhs, "Expected `int`, found <fmt(rhs)>");
+                   return intType();
+                  });
+     collect(lhs, rhs, tb);
 }
 
-void collect(e: (Expression) `( <Expression exp> )`, Tree scope, FRBuilder frb){
-     frb.fact(e, [exp], AType() { return typeof(exp); } );
+void collect(current: (Expression) `( <Expression exp> )`, TBuilder tb){
+    tb.calculate("brackets", current, [exp],  AType() { return getType(exp); });
+    collect(exp, tb);
 }
 
-void collect(e: (Expression) `<String string>`, Tree scope, FRBuilder frb){
-     frb.atomicFact(e, strType());
+void collect(current: (Expression) `<String string>`, TBuilder tb){
+     tb.fact(current, strType());
 }
 
-void collect(e: (Expression) `<Integer intcon>`, Tree scope, FRBuilder frb){
-     frb.atomicFact(e, intType());
+void collect(current: (Expression) `<Integer intcon>`, TBuilder tb){
+     tb.fact(current, intType());
 }
 
 // ---- Refine use/def: enforce def before use -----------
 
-Accept isAcceptableSimple(FRModel frm, Key def, Use use){
-    return variableId() in use.idRoles
+Accept modLangIsAcceptableSimple(TModel tm, Key def, Use use){
+    res = variableId() in use.idRoles
            && def < use.scope 
            && !(use.occ.offset >= def.offset)
            ? ignoreContinue()
            : acceptBinding();
+    println("modLangIsAcceptableSimple: <def>, <use> ==\> <res>");
+    return res;
 }
+
+TypePalConfig modLangTypePalConfig()
+    = tconfig(
+        isAcceptableSimple            = modLangIsAcceptableSimple,
+        lookup                        = lookupWide
+    );
 
 // ----  Examples & Tests --------------------------------
 
-private Program sample(str name) = parse(#Program, |project://TypePal/src/modlang/<name>.modlang|);
+Program sample(str name) = parse(#start[Program], |project://typepal-examples/src/modlang/<name>.modlang|).top;
 
-set[Message] validateModLang(str name) = validate(extractFRModel(sample(name), newFRBuilder())).messages;
+list[Message] validateModLang(str name, bool debug = false) = modLangTModel(name, debug=debug).messages;
+
+TModel modLangTModel(str name, bool debug = false){
+   return modLangTModelFromTree(sample(name), debug=debug);
+}
+
+TModel modLangTModelFromTree(Tree pt, bool debug=false){
+    tb = newTBuilder(pt, config = modLangTypePalConfig());
+    collect(pt, tb);
+    tm = tb.build();
+    return validate(tm, debug=debug);
+}
 
 void testModLang() {
-    runTests(|project://TypePal/src/modlang/tests.ttl|, #Program);
+    runTests([|project://typepal-examples/src/modlang/tests.ttl|], #Program, modLangTModelFromTree);
 }

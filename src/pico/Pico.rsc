@@ -67,8 +67,6 @@ syntax Expression
 
 // ----  IdRoles, PathLabels and AType ------------------- 
 
-data IdRole = variableId();
-
 data AType = intType() | strType();  
 
 AType transType((Type) `natural`) = intType();
@@ -78,6 +76,12 @@ str prettyPrintAType(intType()) = "int";
 str prettyPrintAType(strType()) = "str";
 
 // ----  Collect definitions, uses and requirements -----------------------
+
+void collect(current: (Program) `begin <Declarations decls> <{Statement  ";"}* body> end`, TBuilder tb){
+    tb.enterScope(current);
+        collect(decl, body, tb);
+    tb.leaveScope(current);
+}
  
 void collect(current:(Declaration) `<Id id> : <Type tp>`,  TBuilder tb) {
      tb.define("<id>", variableId(), id, defType(transType(tp)));

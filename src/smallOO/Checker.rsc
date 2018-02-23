@@ -1,11 +1,12 @@
 module smallOO::Checker
-
+ 
 import analysis::typepal::TestFramework;
 extend analysis::typepal::TypePal;
 import util::Reflective;
+import ParseTree;
 
 import smallOO::Syntax;
-
+ 
 data AType
     = intType()
     | strType()
@@ -39,8 +40,7 @@ void collect(current:(Declaration)`class <Identifier className> { <Declaration* 
 }
 
 void collect(current:(Declaration)`<Type returnType> <Identifier functionName> ( <{Parameter ","}* params> ) = <Expression returnExpression> ;`, TBuilder tb) {
-    classScope = tb.getScope();
-    
+    classScope = tb.getScope(); 
     tb.enterScope(current); {
         retType = convertType(returnType);
         tb.defineInScope(classScope, "<functionName>", functionId(), functionName, defType([p.name | p <- params], 
@@ -97,7 +97,7 @@ void collect(current:(Expression)`<String _>`, TBuilder tb) {
 
 void collect(current:(Expression)`<Identifier functionName> ( <{Expression ","}* params> )`, TBuilder tb) {
     tb.use(functionName, {functionId()});  // <==
-    collectFunctionCall(functionId, params, tb);
+    collectFunctionCall(functionName, params, tb);
 }
 
 void collect(current:(Expression)`<Expression lhs> . <Identifier functionName> ( <{Expression ","}* params> )`, TBuilder tb) {
@@ -127,12 +127,12 @@ void collect(current:(Expression)`<Expression lhs> . <Identifier functionName> (
 }
 
 void collectFunctionCall(Identifier functionName, {Expression ","}* params, TBuilder tb) {
-    tb.calculate("return type", current, [functionName] + [ e | e <- params], AType() {
+    tb.calculate("return type", functionName, [functionName] + [ e | e <- params], AType() {
         paramTypes = atypeList([getType(e) | e <- params]);
         switch (getType(functionName)) {
             case overloadedAType({*_,<_,_, functionType(AType ret, paramTypes)>}) : return ret;
             case functionType(AType ret, paramTypes): return ret;
-            default: reportError(current, "No function can be find that accepts these parameters (<fmt(paramTypes)>)");
+            default: reportError(functionName, "No function can be find that accepts these parameters (<fmt(paramTypes)>)");
         }
     });
     collect(params, tb);
