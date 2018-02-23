@@ -21,7 +21,7 @@ test M3 [[
     module B
     import A;
     fun int f2(int p) = f(p) + x;
-]] expect { "Undefined variable, function or parameter `x`" }
+]] expect { "Undefined variable or parameter `x`" }
 
 test M2 [[
     module A

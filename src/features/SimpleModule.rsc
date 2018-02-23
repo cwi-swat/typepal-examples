@@ -39,16 +39,21 @@ data PathRole
     = importPath()
     ;
 
+private TypePalConfig getSimpleModuleConfig() = tconfig(
+ isAcceptablePath = rejectVariables
+);
 
-Accept isAcceptablePath(TModel tm, Key defScope, Key def, Use use, PathRole pathRole) {
-    println("<def> <use>");
-    try 
+
+Accept rejectVariables(TModel tm, Key defScope, Key def, Use use, PathRole pathRole) {
+    try  {
         // if there are variables by that name, skip this module
         if (_ <- getDefinitions(use.id, defScope, {variableId()})) {
             return ignoreContinue();
         }
-    catch:
+    }
+    catch: {
         ;
+    }
     return acceptBinding();
 }
 
@@ -111,7 +116,7 @@ void collect(current:(Expression)`<Id functionName> ( <{Expression ","}* params>
                
 TModel commonTModelFromTree(Tree pt, PathConfig pcfg, bool debug){
     if(pt has top) pt = pt.top;
-    tb = newTBuilder(pt, debug=debug);
+    tb = newTBuilder(pt, config = getSimpleModuleConfig(), debug=debug);
     collect(pt, tb);
     tm = tb.build();
     tm = resolvePath(tm);
