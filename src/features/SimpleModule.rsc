@@ -4,9 +4,10 @@ import util::Reflective;
 import analysis::typepal::TestFramework;
 extend analysis::typepal::TypePal;
 
-extend lang::std::Layout;
+extend features::BasicExpressions;
 
 start syntax TestModules = Module*;
+
 start syntax Module = "module" Id name Import* imports Declaration* decls;
 
 syntax Import = "import" Id name ";";
@@ -19,31 +20,12 @@ syntax Declaration
     
 syntax Parameter = Type paramType Id paramName;
 
-syntax Expression 
-    = Integer i
-    | String s
-    | Id use
-    | Expression lhs "+" Expression rhs
-    | Id functionName "(" {Expression ","}* params ")"
-    ;
-    
-lexical Type = "int" | "str";
-
-keyword Keywords = "int" | "str";
-
-lexical Id = ([a-z A-Z][a-z A-Z 0-9]* !>> [a-z A-Z 0-9]) \ Keywords;
-
-lexical Integer = [0-9]+ !>> [0-9];
-
-lexical String = [\"] ![\"]* [\"];
-
+syntax Expression = Id functionName "(" {Expression ","}* params ")";
 
 //***** Type Pal 
 
 data AType
-    = intType()
-    | strType()
-    | functionType(AType returnType, AType formals)
+    = functionType(AType returnType, AType formals)
     ;
     
 data IdRole
@@ -57,10 +39,9 @@ data PathRole
     = importPath()
     ;
 
-AType convertType((Type)`int`) = intType();
-AType convertType((Type)`str`) = strType();
 
 Accept isAcceptablePath(TModel tm, Key defScope, Key def, Use use, PathRole pathRole) {
+    println("<def> <use>");
     try 
         // if there are variables by that name, skip this module
         if (_ <- getDefinitions(use.id, defScope, {variableId()})) {
@@ -76,10 +57,12 @@ void collect(current:(TestModules)`<Module* modules>`, TBuilder tb) {
 }
 
 void collect(current:(Module)`module <Id name> <Import* imports> <Declaration* decls>`, TBuilder tb) {
+    tb.push(BASIC_EXPRESSION_USE_ROLES, {variableId(), parameterId()});
     tb.define("<name>", moduleId(), current, noDefInfo());
     tb.enterScope(current); {
         collect(imports, decls, tb);
     } tb.leaveScope(current);
+    tb.pop(BASIC_EXPRESSION_USE_ROLES);
 }
 
 void collect(current:(Import)`import <Id name>;`, TBuilder tb) {
@@ -108,28 +91,6 @@ void collect(current:(Parameter)`<Type tp> <Id name>`, TBuilder tb) {
     tb.define("<name>", parameterId(), current, defType(convertType(tp)));
 }
 
-
-void collect(current:(Expression)`<Integer _>`, TBuilder tb) {
-    tb.fact(current, intType());
-}
-
-void collect(current:(Expression)`<String _>`, TBuilder tb) {
-    tb.fact(current, strType());
-}
-
-void collect(current:(Expression)`<Id use>`, TBuilder tb) {
-    tb.use(use, {parameterId(), variableId(), functionId()});
-}
-
-void collect(current:(Expression)`<Expression lhs> + <Expression rhs>`, TBuilder tb) {
-    tb.fact(current, intType());
-    tb.require("only plus on integers", current, [lhs, rhs], () {
-        equal(intType(), getType(lhs)) || reportError(lhs, "not of an integer type");
-        equal(intType(), getType(rhs)) || reportError(rhs, "not of an integer type");
-    });
-    collect(lhs, rhs, tb);
-}
-
 void collect(current:(Expression)`<Id functionName> ( <{Expression ","}* params> )`, TBuilder tb) {
     tb.use(functionName, {functionId()});
 
@@ -154,7 +115,7 @@ TModel commonTModelFromTree(Tree pt, PathConfig pcfg, bool debug){
     collect(pt, tb);
     tm = tb.build();
     tm = resolvePath(tm);
-    tm = validate(tm, debug=debug);
+    tm = validate(tm, debug=debug, lookupFun=lookupWide);
     return tm;
 }
 
