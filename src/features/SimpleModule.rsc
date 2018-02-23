@@ -27,6 +27,8 @@ syntax Expression = Id functionName "(" {Expression ","}* params ")";
 data AType
     = functionType(AType returnType, AType formals)
     ;
+
+str prettyPrintAType(functionType(ret, form)) = "<prettyPrintAType(ret)>(<prettyPrintAType(form)>)";
     
 data IdRole
     = variableId()
@@ -40,7 +42,8 @@ data PathRole
     ;
 
 private TypePalConfig getSimpleModuleConfig() = tconfig(
- isAcceptablePath = rejectVariables
+    isAcceptablePath = rejectVariables,
+    useRoles = {variableId(), parameterId()}
 );
 
 
@@ -62,12 +65,10 @@ void collect(current:(TestModules)`<Module* modules>`, TBuilder tb) {
 }
 
 void collect(current:(Module)`module <Id name> <Import* imports> <Declaration* decls>`, TBuilder tb) {
-    tb.push(BASIC_EXPRESSION_USE_ROLES, {variableId(), parameterId()});
     tb.define("<name>", moduleId(), current, noDefInfo());
     tb.enterScope(current); {
         collect(imports, decls, tb);
     } tb.leaveScope(current);
-    tb.pop(BASIC_EXPRESSION_USE_ROLES);
 }
 
 void collect(current:(Import)`import <Id name>;`, TBuilder tb) {
@@ -114,7 +115,7 @@ void collect(current:(Expression)`<Id functionName> ( <{Expression ","}* params>
  * Test infra
  ***********************************************/
                
-TModel commonTModelFromTree(Tree pt, PathConfig pcfg, bool debug){
+TModel moduleTModelFromName(Tree pt, PathConfig pcfg, bool debug){
     if(pt has top) pt = pt.top;
     tb = newTBuilder(pt, config = getSimpleModuleConfig(), debug=debug);
     collect(pt, tb);
@@ -124,13 +125,13 @@ TModel commonTModelFromTree(Tree pt, PathConfig pcfg, bool debug){
     return tm;
 }
 
-TModel commonTModelFromName(str mname, PathConfig pcfg, bool debug){
-    pt = parse(#start[TestModules], |project://typepal-examples/src/features/<mname>.simple|).top;
-    return commonTModelFromTree(pt, pcfg, debug);
+TModel moduleTModelFromName(str mname, PathConfig pcfg, bool debug){
+    pt = parse(#start[TestModules], |project://typepal-examples/src/features/tests/<mname>.simple|).top;
+    return moduleTModelFromName(pt, pcfg, debug);
 }
 
 bool testModules(bool debug = false, PathConfig pcfg = pathConfig()) {
-    return runTests([|project://typepal-examples/src/features/modules.ttl|], #start[TestModules], TModel (Tree t) {
-        return commonTModelFromTree(t, pcfg, debug);
+    return runTests([|project://typepal-examples/src/features/tests/modules.ttl|], #start[TestModules], TModel (Tree t) {
+        return moduleTModelFromName(t, pcfg, debug);
     });
 }
