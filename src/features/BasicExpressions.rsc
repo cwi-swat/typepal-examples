@@ -22,7 +22,6 @@ lexical Integer = [0-9]+ !>> [0-9];
 
 lexical String = [\"] ![\"]* [\"];
 
-
 data TypePalConfig(set[IdRole] useRoles = {});
 
 data AType

@@ -1,0 +1,19 @@
+test S1 [[
+    module A
+    
+    struct X { f1 : int }
+
+    fun int calc(X x1) = x1.f1 + 2;
+]]
+
+test S1 [[
+    module A
+    
+    struct X { f1 : int }
+    
+    module B
+    
+    import A;
+    
+    fun int calc(X x1) = x1.f1 + 2;
+]]

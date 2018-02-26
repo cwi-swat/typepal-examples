@@ -80,21 +80,31 @@ void collect(current:(Declaration)`var <Id name> = <Expression init>;`, TBuilder
     collect(init, tb);
 }
 
+default void collectType(Type tp, TBuilder tb) {
+    tb.fact(tp, convertType(tp));
+}
+
+void collect(Type current, TBuilder tb) {
+    collectType(current, tb);
+}
+
+
 void collect(current:(Declaration)`fun <Type returnType> <Id name> ( <{Parameter ","}* params> ) = <Expression returnExpression>;`, TBuilder tb) {
-    retType = convertType(returnType);
-    argType = atypeList([convertType(p.paramType) | p <- params]);
-    tb.define("<name>", functionId(), current, defType(functionType(retType, argType)));
+    argTypes = [p.paramType | p <- params];
+    tb.define("<name>", functionId(), current, defType(returnType + argTypes, AType() { return functionType(getType(returnType), atypeList([getType(pt) | pt <- argTypes])); }));
+    collect(returnType + argTypes, tb);
 
     tb.enterScope(current);
-        tb.require("return type expression", returnExpression, [returnExpression], () {
-            equal(retType, getType(returnExpression)) || reportError(returnExpression, "is not of defined type <fmt(retType)>");
+        tb.require("return type expression", returnExpression, [returnType, returnExpression], () {
+            equal(getType(returnType), getType(returnExpression)) || reportError(returnExpression, "is not of defined type <fmt(returnType)> (it is of <fmt(returnExpression)> type)");
         });
         collect(params, returnExpression, tb);
     tb.leaveScope(current);
 }
 
 void collect(current:(Parameter)`<Type tp> <Id name>`, TBuilder tb) {
-    tb.define("<name>", parameterId(), current, defType(convertType(tp)));
+    tb.define("<name>", parameterId(), current, defType([tp], AType() { return getType(tp); }));
+    collect(tp, tb);
 }
 
 void collect(current:(Expression)`<Id functionName> ( <{Expression ","}* params> )`, TBuilder tb) {
