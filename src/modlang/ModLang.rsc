@@ -14,8 +14,11 @@ module modlang::ModLang
 
 extend analysis::typepal::TypePal;
 extend analysis::typepal::TestFramework;
+extend analysis::typepal::ExtractTModel;
+import IO;
+import ParseTree;
 
-// ----  ModLang syntax ----------------------------------
+// ----  ModLang syntax -------------------------------------------------------
 
 lexical Id      = ([a-z][a-z0-9]* !>> [a-z0-9]) \ Reserved;
 lexical ModId   = ([A-Z][a-z0-9]* !>> [a-z0-9]) \ Reserved;
@@ -63,7 +66,7 @@ syntax Expression
    > left Expression exp1 "+" Expression exp2 
    ;
 
-// ----  IdRoles, PathLabels and AType ------------------- 
+// ----  IdRoles, PathLabels and AType ---------------------------------------- 
      
 data IdRole
     = moduleId()
@@ -83,7 +86,7 @@ data AType
 str prettyPrintAType(intType()) = "int";
 str prettyPrintAType(strType()) = "str";
 
-// ----  Collect facts & constraints ------------------------------------
+// ----  Collect facts & constraints ------------------------------------------
 
 void collect(current: (ModuleDecl) `module <ModId mid> { <Decl* decls> }`, TBuilder tb) {
      tb.define("<mid>", moduleId(), mid, noDefInfo());
@@ -103,17 +106,17 @@ void collect(current: (Expression) `fun <Id id> { <Expression body> }`, TBuilder
      
         tb.define("<id>", parameterId(), id, defType(tau1));
         tb.calculate("function declaration", current, [body],  
-            AType() {
-                     res = functionType(tau1, tau2);
-                     println("res = <res>");
-                     return res;
-                   });
+            AType(TChecker c) {
+                res = functionType(tau1, tau2);
+                println("res = <res>");
+                return res;
+            });
         collect(body, tb);
      tb.leaveScope(current);
 }
 
 void collect(current: (VarDecl) `def <Id id> = <Expression expression> ;`, TBuilder tb)     {
-     tb.define("<id>", variableId(), id, defType([expression], AType(){ return getType(expression); })); // <<<
+     tb.define("<id>", variableId(), id, defType([expression], AType(TChecker c){ return c.getType(expression); })); // <<<
      collect(expression, tb);
 }
 
@@ -125,36 +128,37 @@ void collect(current: (Expression) `<Expression exp1>(<Expression exp2>)`, TBuil
      tau1 = tb.newTypeVar(exp1); 
      tau2 = tb.newTypeVar(exp2); 
      tb.calculateEager("application", current, [exp1, exp2],
-        AType () { 
-                   unify(functionType(tau1, tau2), getType(exp1)) || reportError(exp1, "Function type expected, found <fmt(exp1)>");
-                   unify(getType(exp2), tau1) || reportError(exp2, "Expected <fmt(tau1)> as argument,  found <fmt(exp2)>");
-                   return tau2;
-            });
+        AType (TChecker c) { 
+            c.unify(functionType(tau1, tau2), c.getType(exp1)) || c.reportError(exp1, "Function type expected, found <c.fmt(exp1)>");
+            c.unify(c.getType(exp2), tau1) || c.reportError(exp2, "Expected <c.fmt(tau1)> as argument,  found <c.fmt(exp2)>");
+            return tau2;
+        });
      collect(exp1, exp2, tb);
 }
 
 void collect(current: (Expression) `<Expression lhs> + <Expression rhs>`, TBuilder tb){
      tb.calculate("addition", current, [lhs,rhs],
-         AType () { 
-                    targs = atypeList([getType(lhs), getType(rhs)]);
-                    if(unify(targs, atypeList([intType(), intType()]))) return intType();
-                    if(unify(targs, atypeList([strType(), strType()]))) return strType();
-                    reportError(current, "No version of + is applicable for <fmt([lhs, rhs])>");
-                  });
+         AType (TChecker c) { 
+            targs = atypeList([c.getType(lhs), c.getType(rhs)]);
+            if(c.unify(targs, atypeList([intType(), intType()]))) return intType();
+            if(c.unify(targs, atypeList([strType(), strType()]))) return strType();
+            c.reportError(current, "No version of + is applicable for <c.fmt([lhs, rhs])>");
+        });
      collect(lhs, rhs, tb);
 }
 
 void collect(current: (Expression) `<Expression lhs> * <Expression rhs>`, TBuilder tb){
      tb.calculate("multiplication", current, [lhs, rhs],
-        AType () { unify(getType(lhs), intType()) || reportError(lhs, "Expected `int`, found <fmt(lhs)>");
-                   unify(getType(rhs), intType()) || reportError(rhs, "Expected `int`, found <fmt(rhs)>");
-                   return intType();
-                  });
+        AType (TChecker c) { 
+            c.unify(c.getType(lhs), intType()) || c.reportError(lhs, "Expected `int`, found <c.fmt(lhs)>");
+            c.unify(c.getType(rhs), intType()) ||c.reportError(rhs, "Expected `int`, found <c.fmt(rhs)>");
+            return intType();
+        });
      collect(lhs, rhs, tb);
 }
 
 void collect(current: (Expression) `( <Expression exp> )`, TBuilder tb){
-    tb.calculate("brackets", current, [exp],  AType() { return getType(exp); });
+    tb.calculate("brackets", current, [exp],  AType(TChecker c) { return c.getType(exp); });
     collect(exp, tb);
 }
 
@@ -166,7 +170,7 @@ void collect(current: (Expression) `<Integer intcon>`, TBuilder tb){
      tb.fact(current, intType());
 }
 
-// ---- Refine use/def: enforce def before use -----------
+// ---- Configure: enforce def before use -------------------------------------
 
 Accept modLangIsAcceptableSimple(TModel tm, Key def, Use use){
     res = variableId() in use.idRoles
@@ -184,7 +188,7 @@ TypePalConfig modLangTypePalConfig()
         lookup                        = lookupWide
     );
 
-// ----  Examples & Tests --------------------------------
+// ----  Examples & Tests -----------------------------------------------------
 
 Program sample(str name) = parse(#start[Program], |project://typepal-examples/src/modlang/<name>.modlang|).top;
 
@@ -195,10 +199,7 @@ TModel modLangTModel(str name, bool debug = false){
 }
 
 TModel modLangTModelFromTree(Tree pt, bool debug=false){
-    tb = newTBuilder(pt, config = modLangTypePalConfig());
-    collect(pt, tb);
-    tm = tb.build();
-    return validate(tm, debug=debug);
+    return collectAndCheck(pt, config = modLangTypePalConfig(), debug=debug);
 }
 
 void testModLang() {

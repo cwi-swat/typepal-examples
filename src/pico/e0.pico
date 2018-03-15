@@ -1,4 +1,0 @@
-begin
-    declare n : natural, m : natural;
-    n := 1
-end

@@ -1,4 +1,52 @@
-test M1 [[
+test Class1 [[
+    module M
+    class C {
+        int i;
+        int f (int b) = i + b;
+    }
+]]
+
+test Class2 [[
+    module M
+    class C {
+        str i;
+        str f (str b) = i + b;
+    }
+]]
+
+test UndefinedField1 [[
+    module M
+    class C {
+        int i;
+        int f (int b) = j + b;
+    }
+]] expect { "Undefined field, function or parameter `j`" }
+
+test UndefinedParameter [[
+    module M
+    class C {
+        int i;
+        int f (int b) = i + c;
+    }
+]] expect { "Undefined field, function or parameter `c`" }
+
+test WrongPlus1 [[
+    module M
+    class C {
+        int i;
+        str s;
+        int f () = i + s;
+    }
+]] expect { "+ is not defined on `int` and `str`" }
+
+test UndefinedClass [[
+    module M
+    class C {
+        D d;
+    }
+]] expect { "Undefined class `D`" }
+
+test Module1 [[
     module M
     
     class A {
@@ -7,12 +55,11 @@ test M1 [[
     
     class B {
         A a;
-        
         int g(int p) = a.f + p;
     }
 ]]
 
-test M2 [[
+test Module2 [[
     module M
     
     class A {
@@ -21,7 +68,58 @@ test M2 [[
     
     class B {
         A a;
-        
         int f(int p) = a.f(p) + p;
     }
 ]]
+
+test UndefinedField2 [[
+    module M
+    
+    class A {
+        int f;
+    }
+    
+    class B {
+        A a;
+        int g(int p) = a.g + p;
+    }
+]] expect { "Type of field `g` could not be computed for `A` " }
+
+test WrongPlus2 [[
+    module M
+    
+    class A {
+        str f;
+    }
+    
+    class B {
+        A a;
+        int g(int p) = a.f + p;
+    }
+]] expect { "+ is not defined on `str` and `int`" }
+
+test WrongParameter1 [[
+    module M
+    
+    class A {
+        int f(int p) = p + 2;
+    }
+    
+    class B {
+        A a;
+        int f(str p) = a.f(p) + p;
+    }
+]] expect { "No function can be found that accepts these parameters: `str`" }
+
+test UndefinedFunction1 [[
+    module M
+    
+    class A {
+        int f(int p) = p + 2;
+    }
+    
+    class B {
+        A a;
+        int f(str p) = a.g(p) + p;
+    }
+]] expect { "Type of method `g` could not be computed for `A`, `str` " }

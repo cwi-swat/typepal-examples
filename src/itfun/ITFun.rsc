@@ -15,6 +15,9 @@ module itfun::ITFun
 
 extend analysis::typepal::TypePal;
 extend analysis::typepal::TestFramework;
+extend analysis::typepal::ExtractTModel;
+import IO;
+import ParseTree;
 
 // ----  ITFun syntax ------------------------------------
 
@@ -68,25 +71,26 @@ void collect(current: (Expression) `fun <Id name> { <Expression body> }`, TBuild
         tau2 = tb.newTypeVar(body);
         tb.define("<name>", variableId(), name, defType(tau1));
         tb.calculate("function declaration", current, [],  
-            AType() {
+            AType(TChecker c) {
                      res = functionType(tau1, tau2);
                      println("res = <res>");
                      return res;
                    });
         tb.requireEager("body", body, [body], 
-            (){ unify(tau2, getType(body)) || reportError(body, "type of body");} );
+            void (TChecker c){ c.unify(tau2, c.getType(body)) || c.reportError(body, "type of body");} );
         collect(body, tb);
      tb.leaveScope(current);
 }
 
 void collect(current: (Expression) `<Expression exp1>(<Expression exp2>)`, TBuilder tb) { 
+iprintln(exp1);
      tau1 = tb.newTypeVar(exp1); 
      tau2 = tb.newTypeVar(exp2); 
      
      tb.calculateEager("application", current, [exp1, exp2],
-        AType () { 
-              unify(functionType(tau1, tau2), getType(exp1)) || reportError(exp1, "Function type expected, found <fmt(exp1)>");
-              unify(getType(exp2), tau1) || reportError(exp2, "Incorrect type of actual parameter");
+        AType (TChecker c) { 
+              c.unify(functionType(tau1, tau2), c.getType(exp1)) || c.reportError(exp1, "Function type expected, found <c.fmt(exp1)>");
+              c.unify(c.getType(exp2), tau1) || c.reportError(exp2, "Incorrect type of actual parameter");
               return tau2;
             });
       collect(exp1, exp2, tb);
@@ -95,43 +99,45 @@ void collect(current: (Expression) `<Expression exp1>(<Expression exp2>)`, TBuil
 
 void collect(current: (Expression) `let <Id name> = <Expression exp1> in <Expression exp2> end`, TBuilder tb) { 
     tb.enterScope(current); 
-        tb.define("<name>", variableId(), name, defType([exp1], AType() { return getType(exp1); })); // <<<
+        tb.define("<name>", variableId(), name, defType([exp1], AType(TChecker c) { return c.getType(exp1); })); // <<<
         tb.calculate("let body", current, [exp2],
-            AType(){ return getType(exp2); });
+            AType(TChecker c){ return c.getType(exp2); });
         collect(exp1, exp2, tb);
     tb.leaveScope(current);
 }
 
 void collect(current: (Expression) `if <Expression cond> then <Expression thenPart> else <Expression elsePart> fi`, TBuilder tb){
      tb.calculate("if", current, [cond, thenPart, elsePart],
-        AType () { unify(getType(cond), boolType()) || reportError(cond, "Condition");
-              unify(getType(thenPart), getType(elsePart)) || reportError(current, "thenPart and elsePart should have same type");
-              return getType(thenPart); 
-            }); 
+        AType (TChecker c) { 
+            c.unify(c.getType(cond), boolType()) || c.reportError(cond, "Condition");
+            c.unify(c.getType(thenPart), c.getType(elsePart)) || reportError(current, "thenPart and elsePart should have same type");
+            return c.getType(thenPart); 
+        }); 
      collect(cond, thenPart, elsePart, tb);
 }
 
 void collect(current: (Expression) `<Expression lhs> + <Expression rhs>`, TBuilder tb){
      tb.calculate("addition", current, [lhs,rhs],
-         AType () { 
-                    targs = atypeList([getType(lhs), getType(rhs)]);
-                    if(unify(targs, atypeList([intType(), intType()]))) return intType();
-                    reportError(current, "No version of + is applicable for <fmt([lhs, rhs])>");
-                  });
-     collect(lhs, rhs, tb);
+         AType (TChecker c) { 
+            targs = atypeList([c.getType(lhs), c.getType(rhs)]);
+            if(c.unify(targs, atypeList([intType(), intType()]))) return intType();
+                reportError(current, "No version of + is applicable for <c.fmt([lhs, rhs])>");
+        });
+     collect(lhs, rhs, tb); 
 }
 
 void collect(current: (Expression) `<Expression lhs> && <Expression rhs>`, TBuilder tb){
      tb.calculate("and", current, [lhs, rhs],
-        AType () { unify(getType(lhs), boolType()) || reportError(lhs, "Expected `bool`, found <fmt(lhs)>");
-                   unify(getType(rhs), boolType()) || reportError(rhs, "Expected `bool`, found <fmt(rhs)>");
-                   return boolType();
-                  });
-     collect(lhs, rhs, tb);
+        AType (TChecker c) {
+            c.unify(c.getType(lhs), boolType()) || c.reportError(lhs, "Expected `bool`, found <c.fmt(lhs)>");
+            c.unify(c.getType(rhs), boolType()) || c.reportError(rhs, "Expected `bool`, found <c.fmt(rhs)>");
+            return boolType();
+        });
+    collect(lhs, rhs, tb);
 }
 
 void collect(current: (Expression) `( <Expression exp> )`, TBuilder tb){
-    tb.calculate("brackets", current, [exp],  AType() { return getType(exp); });
+    tb.calculate("brackets", current, [exp],  AType(TChecker c) { return c.getType(exp); });
     collect(exp, tb);
 }
 
@@ -151,14 +157,13 @@ void collect(current: (Expression) `<Integer intcon>`, TBuilder tb){
 
 private Expression sample(str name) = parse(#start[Expression], |project://typepal-examples/src/itfun/<name>.it|).top;
 
-list[Message] validateItFun(str name, bool debug = false)
-    = itFunTModelFromTree(sample(name), debug=debug).messages;
+list[Message] validateItFun(str name, bool debug = false){
+    Tree pt =  parse(#start[Expression], |project://typepal-examples/src/itfun/<name>.it|).top;
+    return itFunTModelFromTree(sample(name), debug=debug).messages;
+}
 
 TModel itFunTModelFromTree(Tree pt, bool debug=false){
-    tb = newTBuilder(pt);
-    collect(pt, tb);
-    tm = tb.build();
-    return validate(tm, debug=debug);
+    return collectAndCheck(pt, debug=debug);
 }
 
 void testItFun() {

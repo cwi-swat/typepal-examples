@@ -11,12 +11,17 @@ Redistribution and use in source and binary forms, with or without modification,
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 }
 module pico::Pico
-
-// Pico, a trivial language, single scope, no functions
-
+  
+// Pico, a trivial, classic, language:
+// - single scope, no functions
+// - integers and strings as types and values
+// - assignment, if and while statements
+  
 import Prelude;
 
+extend analysis::typepal::ExtractTModel;
 extend analysis::typepal::TypePal;
+extend analysis::typepal::TestFramework; 
 
 // ----  Pico syntax -------------------------------------
 
@@ -28,9 +33,7 @@ layout Layout = WhitespaceAndComment* !>> [\ \t\n\r%];
 
 lexical WhitespaceAndComment 
    = [\ \t\n\r]
-   | @category="Comment" ws2:
-    "%" ![%]+ "%"
-//   | @category="Comment" ws3: "{" ![\n}]*  "}"$
+   | @category="Comment" ws2: "%" ![%]+ "%"
    ;
  
 start syntax Program 
@@ -54,7 +57,7 @@ syntax Statement
    | "if" Expression cond "then" {Statement ";"}*  thenPart "else" {Statement ";"}* elsePart "fi"   
    | "while" Expression cond "do" {Statement ";"}* body "od"                                   
    ;  
-     
+      
 syntax Expression 
    = Id name                                    
    | String string                          
@@ -77,78 +80,83 @@ str prettyPrintAType(strType()) = "str";
 
 // ----  Collect definitions, uses and requirements -----------------------
 
-void collect(current: (Program) `begin <Declarations decls> <{Statement  ";"}* body> end`, TBuilder tb){
-    tb.enterScope(current);
-        collect(decl, body, tb);
-    tb.leaveScope(current);
+void collect(current: (Program) `begin <Declarations decls> <{Statement  ";"}* body> end`, Collector c){
+    c.enterScope(current);
+        collect(decls, body, c);
+    c.leaveScope(current);
 }
  
-void collect(current:(Declaration) `<Id id> : <Type tp>`,  TBuilder tb) {
-     tb.define("<id>", variableId(), id, defType(transType(tp)));
+void collect(current:(Declaration) `<Id id> : <Type tp>`,  Collector c) {
+     c.define("<id>", variableId(), id, defType(transType(tp)));
 }
 
-void collect(current: (Expression) `<Id name>`, TBuilder tb){
-     tb.use(name, {variableId()});
+void collect(current: (Expression) `<Id name>`, Collector c){
+     c.use(name, {variableId()});
 }
 
-void collect(current: (Statement) `<Id var> := <Expression val>`, TBuilder tb){
-     tb.use(var, {variableId()});
-     tb.require("assignment", current, [var, val],
-        (){ equal(getType(var), getType(val)) || reportError(current, "Lhs <fmt(var)> should have same type as rhs"); });
-     collect(val, tb);
+void collect(current: (Statement) `<Id var> := <Expression val>`, Collector c){
+     c.use(var, {variableId()});
+     c.require("assignment", current, [var, val],
+        void(Solver s){ s.equal(var, val) || s.reportError(current, "Lhs <s.fmt(var)> should have same type as rhs"); });
+     collect(val, c);
 }
 
-void collect(current: (Statement) `if <Expression cond> then <{Statement ";"}*  thenPart> else <{Statement ";"}* elsePart> fi`, TBuilder tb){
-     tb.require("int_condition", current, [cond],
-        () { equal(getType(cond), intType()) || reportError(cond, "Condition should be `int`, found <fmt(cond)>"); });
-     collect(cond, thenPart, elsePart, tb);
+void collect(current: (Statement) `if <Expression cond> then <{Statement ";"}*  thenPart> else <{Statement ";"}* elsePart> fi`, Collector c){
+     c.require("if condition", current, [cond],
+        void (Solver s) {s.equal(cond, intType()) || s.reportError(cond, "Condition should be `int`, found <s.fmt(cond)>"); });
+     collect(cond, thenPart, elsePart, c);
 }
 
-void collect(current: (Statement) `while <Expression cond> do <{Statement ";"}* body> od`, TBuilder tb){
-     tb.require("int_condition", current, [cond],
-        () { equal(getType(cond), intType()) || reportError(cond, "Condition should be `int`, found <fmt(cond)>"); });
-     collect(cond, body, tb);
+void collect(current: (Statement) `while <Expression cond> do <{Statement ";"}* body> od`, Collector c){
+     c.require("while condition", current, [cond],
+        void (Solver s) { s.equal(cond, intType()) || s.reportError(cond, "Condition should be `int`, found <s.fmt(cond)>"); });
+     collect(cond, body, c);
 }
 
-void collect(current: (Expression) `<Expression lhs> + <Expression rhs>`, TBuilder tb){
-     tb.calculate("addition", current, [lhs, rhs], 
-        AType () { switch([getType(lhs), getType(rhs)]){
+void collect(current: (Expression) `<Expression lhs> + <Expression rhs>`, Collector c){
+     c.calculate("addition", current, [lhs, rhs], 
+        AType (Solver s) { switch([s.getType(lhs), s.getType(rhs)]){
                    case [intType(), intType()]: return intType();
                    case [strType(), strType()]: return strType();
                    default:
-                       reportError(current, "Operator `+` cannot be applied to <fmt(lhs)> and <fmt(rhs)>");
+                       s.reportError(current, "Operator `+` cannot be applied to <s.fmt(lhs)> and <s.fmt(rhs)>");
                    }
                  });
-     collect(lhs, rhs, tb);
+     collect(lhs, rhs, c);
 }
 
-void collect(current: (Expression) `<Expression lhs> - <Expression rhs>`, TBuilder tb){
-     tb.calculate("subtraction", current, [lhs, rhs],
-        AType () { equal(getType(lhs), intType()) || reportError(lhs, "Left argument of `-` should be `int`, found <fmt(lhs)>");
-                   equal(getType(rhs), intType()) || reportError(rhs, "Right argument of `-` should be `int`, found <fmt(rhs)>");
-                   return intType();
-                 });
-     collect(lhs, rhs, tb);
+void collect(current: (Expression) `<Expression lhs> - <Expression rhs>`, Collector c){
+     c.calculate("subtraction", current, [lhs, rhs],
+        AType (Solver s) { 
+                s.equal(lhs, intType()) || s.reportError(lhs, "Left argument of `-` should be `int`, found <s.fmt(lhs)>");
+                s.equal(rhs, intType()) || s.reportError(rhs, "Right argument of `-` should be `int`, found <s.fmt(rhs)>");
+                return intType();
+        });
+     collect(lhs, rhs, c);
 }
  
-void collect(current: (Expression) `<String string>`, TBuilder tb){
-    tb.fact(current, strType());
+void collect(current: (Expression) `<String string>`, Collector c){
+    c.fact(current, strType());
 }
 
-void collect(current: (Expression) `<Natural natcon>`, TBuilder tb){
-    tb.fact(current, intType());
+void collect(current: (Expression) `<Natural natcon>`, Collector c){
+    c.fact(current, intType());
 }
 
 // ----  Examples & Tests --------------------------------
 
-public Program samplePico(str name) = parse(#Program, |project://typepal-examples/src/pico/<name>.pico|);
-                     
-list[Message] validatePico(str name) {
-    Tree pt = samplePico(name);
-    tb = newTBuilder(pt);
-    collect(pt, tb);
-    tm = tb.build();
-    tm = validate(tm);
-    return tm.messages;
+TModel picoTModelFromName(str name, bool debug = false) {
+    Tree pt = parse(#Program, |project://typepal-examples/src/pico/<name>.pico|);
+    return collectAndSolve(pt, debug=debug);
 }
- value main() = validatePico("e1");
+
+TModel picoTModelFromTree(Tree pt, bool debug = false) {
+    return collectAndSolve(pt, debug=debug);
+}
+
+ 
+bool testPico(bool debug = false) {
+    return runTests([|project://typepal-examples/src/pico/pico.ttl|], #start[Program], TModel (Tree t) {
+        return picoTModelFromTree(t, debug=debug);
+    });
+}
