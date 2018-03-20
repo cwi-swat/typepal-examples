@@ -80,7 +80,7 @@ void collect(current:(Module)`module <Identifier _> <Import* _> <Declaration* de
 }
 
 void collect(current:(Declaration)`class <Identifier className> { <Declaration* decls> }`, Collector c) {
-    c.defineSourceType("<className>", classId(), current, defType(classType("<className>")));
+    c.defineNamedType("<className>", classId(), current, defType(classType("<className>")));
     c.enterScope(current);
         collect(decls, c);
     c.leaveScope(current);
@@ -95,7 +95,7 @@ void collect(current:(Declaration)`<Type returnType> <Identifier functionName> (
      
         c.require("return expression", returnExpression, [returnExpression],
             void (Solver s) {
-                s.equal(retType, returnExpression) || s.reportError(returnExpression, "Return expression is not the same type as the return type (<s.fmt(returnExpression)> instead of (<s.fmt(retType)>)");
+                s.equal(retType, returnExpression, error(returnExpression, "Return expression is not the same type as the return type (%t) instead of (%t)", returnExpression, retType));
         });
         collect(returnType, params, returnExpression, c);
     }
@@ -166,7 +166,7 @@ AType computeCallType(Identifier functionName, AType funType, AType parTypes, So
     switch (funType) {
         case overloadedAType({*_,<_,_, functionType(AType ret, parTypes)>}) : return ret;
         case functionType(AType ret, parTypes): return ret;
-        default: s.reportError(functionName, "No function can be found that accepts these parameters: <s.fmt(parTypes)>");
+        default: s.report(error(functionName, "No function can be found that accepts these parameters: %t", parTypes));
     }
 }
 
@@ -177,7 +177,7 @@ void collect(current:(Expression)`<Expression lhs> + <Expression rhs>`, Collecto
                 case [intType(), intType()]: return intType();
                 case[strType(), strType()]: return strType();
                 default:
-                     s.reportError(current, "+ is not defined on <s.fmt(lhs)> and <s.fmt(rhs)>");
+                     s.report(error(current, "+ is not defined on %t and %t", lhs, rhs));
             }
     });
     collect(lhs, rhs, c);

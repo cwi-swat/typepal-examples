@@ -1,0 +1,2 @@
+ alias INT1 = INT2;
+ alias INT2 = INT1;
