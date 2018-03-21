@@ -1,6 +1,6 @@
 module lang_features::Alias
 
-extend analysis::typepal::ExtractTModel;    // tmp
+extend analysis::typepal::Collector;    // tmp
 extend analysis::typepal::TestFramework;    // tmp
 import ParseTree;
 import IO;
@@ -61,7 +61,7 @@ void collect(current: (Program) `<Declaration* decls>`, Collector c){
 void collect(current:(Declaration)`<Type typ> <Id id> = <Expression exp> ;`, Collector c) {
     c.define("<id>", variableId(), current, defGetType(typ));
     c.require("declaration of `<id>`", current, [typ, exp],
-        void(Solver s){ s.equal(typ, exp, error(exp, "Incorrect initialization, expected %t, found %t", typ, exp)); }
+        void(Solver s){ s.requireEqual(typ, exp, error(exp, "Incorrect initialization, expected %t, found %t", typ, exp)); }
        );
     c.enterScope(current);
         collect(typ, exp, c);
@@ -69,7 +69,7 @@ void collect(current:(Declaration)`<Type typ> <Id id> = <Expression exp> ;`, Col
 }
 
 void collect(current:(Declaration)`struct <Id name> { <{Field ","}* fields> };`, Collector c) {
-    c.defineNamedType("<name>", structId(), current, defType(structType("<name>"))); 
+    c.define("<name>", structId(), current, defType(structType("<name>"))); 
     c.enterScope(current);
         collect(fields, c);
     c.leaveScope(current);
@@ -105,7 +105,7 @@ void collect(current:(Expression) `new <Id name>`, Collector c){
 }
 
 void collect(current:(Expression)`<Expression lhs> . <Id fieldName>`, Collector c) {
-    c.useViaNamedType(lhs, fieldName, {fieldId()});
+    c.useViaNamedType(lhs, {structId()}, fieldName, {fieldId()});
     c.sameType(current, fieldName);
         
     collect(lhs, c);

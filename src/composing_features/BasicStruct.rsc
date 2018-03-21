@@ -1,7 +1,7 @@
 module composing_features::BasicStruct
 
 extend composing_features::SimpleModule;
-extend analysis::typepal::ExtractTModel;    // tmp
+extend analysis::typepal::Collector;    // tmp
 extend analysis::typepal::TestFramework;    // tmp
 import ParseTree;
 

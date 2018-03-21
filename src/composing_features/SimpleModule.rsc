@@ -3,7 +3,7 @@ module composing_features::SimpleModule
 import util::Reflective;
 import analysis::typepal::TestFramework;
 extend analysis::typepal::TypePal;
-extend analysis::typepal::ExtractTModel;
+extend analysis::typepal::Collector;
 import ParseTree;
 
 extend composing_features::BasicExpressions;
@@ -102,7 +102,7 @@ void collect(current:(Declaration)`fun <Type returnType> <Id name> ( <{Parameter
     c.enterScope(current);
         c.require("return type expression", returnExpression, [returnType, returnExpression], 
             void (Solver s) {
-                s.equal(returnType, returnExpression) || s.reportError(returnExpression, "is not of defined type <s.fmt(returnType)> (it is of <fmt(returnExpression)> type)");
+                s.requireEqual(returnType, returnExpression) || s.reportError(returnExpression, "is not of defined type <s.fmt(returnType)> (it is of <fmt(returnExpression)> type)");
         });
         collect(params, returnExpression, c);
     c.leaveScope(current);
@@ -120,7 +120,7 @@ void collect(current:(Expression)`<Id functionName> ( <{Expression ","}* params>
         AType(Solver s) {
             fType = s.getType(functionName);
             actuals = atypeList([s.getType(p) | p <- params]);
-            s.equal(fType.formals, actuals) || s.reportError(current, "Type of parameters are incorrect. Got <s.fmt(actuals)>, expected <s.fmt(fType.formals)>");
+            s.requireEqual(fType.formals, actuals) || s.reportError(current, "Type of parameters are incorrect. Got <s.fmt(actuals)>, expected <s.fmt(fType.formals)>");
             return fType.returnType;
         });
     

@@ -15,7 +15,7 @@ module dtfun::DTFun
 // Functional language with declared types
  
 extend analysis::typepal::TypePal;
-extend analysis::typepal::ExtractTModel;
+extend analysis::typepal::Collector;
 extend analysis::typepal::TestFramework;
 import analysis::typepal::TypePalConfig;
 
@@ -110,7 +110,7 @@ void collect(current: (Expression) `<Id name>`,  Collector c){
 void collect(current: (Expression) `<Expression exp1> (<Expression exp2>)`, Collector c) { 
      c.require("application", current, [exp1, exp2],
          void (Solver s) {  if(functionType(tau1, tau2) := s.getType(exp1)){
-                  s.equal(exp2, tau1, error(exp2, "Incorrect type of actual parameter"));
+                  s.requireEqual(exp2, tau1, error(exp2, "Incorrect type of actual parameter"));
                   s.fact(current, tau2);
                } else {
                   s.report(error(exp1, "Function type expected"));
@@ -124,8 +124,8 @@ void collect(current: (Expression) `<Expression exp1> (<Expression exp2>)`, Coll
 void collect(current: (Expression) `if <Expression cond> then <Expression thenPart> else <Expression elsePart> fi`, Collector c){
      c.calculate("if", current, [cond, thenPart, elsePart],
         AType (Solver s) { 
-            s.equal(cond, boolType(), error(cond, "Condition"));
-            s.equal(thenPart, elsePart, error(current, "thenPart and elsePart should have same type"));
+            s.requireEqual(cond, boolType(), error(cond, "Condition"));
+            s.requireEqual(thenPart, elsePart, error(current, "thenPart and elsePart should have same type"));
             return s.getType(thenPart);
         }); 
       collect(cond, thenPart, elsePart, c);
@@ -136,8 +136,8 @@ void collect(current: (Expression) `if <Expression cond> then <Expression thenPa
 void collect(current: (Expression) `<Expression lhs> + <Expression rhs>`, Collector c){
      c.calculate("addition", current, [lhs, rhs],
         AType (Solver s) { 
-            s.equal(lhs, intType(), error(lhs, "Lhs of +"));
-            s.equal(rhs, intType(), error(rhs, "Rhs of +"));
+            s.requireEqual(lhs, intType(), error(lhs, "Lhs of +"));
+            s.requireEqual(rhs, intType(), error(rhs, "Rhs of +"));
             return intType();
         });
       collect(lhs, rhs, c);
@@ -148,8 +148,8 @@ void collect(current: (Expression) `<Expression lhs> + <Expression rhs>`, Collec
 void collect(current: (Expression) `<Expression lhs> && <Expression rhs>`, Collector c){
      c.calculate("and", current, [lhs, rhs],
         AType (Solver s) { 
-            s.equal(lhs, boolType(), error(lhs, "Lhs of &&"));
-            s.equal(rhs, boolType(), error(rhs, "Rhs of &&"));
+            s.requireEqual(lhs, boolType(), error(lhs, "Lhs of &&"));
+            s.requireEqual(rhs, boolType(), error(rhs, "Rhs of &&"));
             return intType();
         });
       collect(lhs, rhs, c);

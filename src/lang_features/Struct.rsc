@@ -1,6 +1,6 @@
 module lang_features::Struct
 
-extend analysis::typepal::ExtractTModel;    // tmp
+extend analysis::typepal::Collector;    // tmp
 extend analysis::typepal::TestFramework;    // tmp
 import ParseTree;
 
@@ -51,7 +51,7 @@ str prettyPrintAType(structType(name)) = "struct <name>";
 void collect(current:(Declaration)`<Type typ> <Id id> = <Expression exp> ;`, Collector c) {
     c.define("<id>", variableId(), current, defGetType(typ));
     c.require("declaration of <id>", current, [typ, exp],
-        void(Solver s){ s.equal(typ, exp, error(exp, "Incorrect initialization, expected %t, found %t", typ, exp)); }
+        void(Solver s){ s.requireEqual(typ, exp, error(exp, "Incorrect initialization, expected %t, found %t", typ, exp)); }
        );
     c.enterScope(current);
         collect(typ, exp, c);

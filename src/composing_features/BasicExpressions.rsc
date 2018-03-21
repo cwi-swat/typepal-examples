@@ -2,7 +2,7 @@ module composing_features::BasicExpressions
 
 import analysis::typepal::TestFramework;
 extend analysis::typepal::TypePal;
-extend analysis::typepal::ExtractTModel;
+extend analysis::typepal::Collector;
 import ParseTree;
 
 extend lang::std::Layout;

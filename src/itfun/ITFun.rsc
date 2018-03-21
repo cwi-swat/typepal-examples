@@ -15,7 +15,7 @@ module itfun::ITFun
 
 extend analysis::typepal::TypePal;
 extend analysis::typepal::TestFramework;
-extend analysis::typepal::ExtractTModel;
+extend analysis::typepal::Collector;
 import IO;
 import ParseTree;
 

@@ -2,7 +2,7 @@ module smallOO::SmallOO
  
 import analysis::typepal::TestFramework;
 extend analysis::typepal::TypePal;
-extend analysis::typepal::ExtractTModel; 
+extend analysis::typepal::Collector; 
 import util::Reflective;
 import ParseTree;
 
@@ -54,7 +54,7 @@ keyword Keywords = "module" | "class" | "import" | "int" | "str";
 data AType
     = intType()
     | strType()
-    | classType(str nm)
+    | classType(str name)
     | functionType(AType returnType, AType formals)
     ;
     
@@ -80,7 +80,7 @@ void collect(current:(Module)`module <Identifier _> <Import* _> <Declaration* de
 }
 
 void collect(current:(Declaration)`class <Identifier className> { <Declaration* decls> }`, Collector c) {
-    c.defineNamedType("<className>", classId(), current, defType(classType("<className>")));
+    c.define("<className>", classId(), current, defType(classType("<className>")));
     c.enterScope(current);
         collect(decls, c);
     c.leaveScope(current);
@@ -95,7 +95,7 @@ void collect(current:(Declaration)`<Type returnType> <Identifier functionName> (
      
         c.require("return expression", returnExpression, [returnExpression],
             void (Solver s) {
-                s.equal(retType, returnExpression, error(returnExpression, "Return expression is not the same type as the return type (%t) instead of (%t)", returnExpression, retType));
+                s.requireEqual(retType, returnExpression, error(returnExpression, "Return expression is not the same type as the return type (%t) instead of (%t)", returnExpression, retType));
         });
         collect(returnType, params, returnExpression, c);
     }
@@ -136,16 +136,15 @@ void collect(current:(Expression)`<Identifier functionName> ( <{Expression ","}*
 }
 
 void collect(current:(Expression)`<Expression lhs> . <Identifier id>`, Collector c) {
-    //c.useSourceType(lhs, id, {fieldId()});
-    c.calculate("field `<id>`", current, [lhs],
-        AType(Solver s) { return s.getTypeInSourceType(lhs, id, {fieldId()}); });
+    c.useViaNamedType(lhs, {classId()}, id, {fieldId()});
     collect(lhs, c);           
 }
 
 void collect(current:(Expression)`<Expression lhs> . <Identifier functionName> ( <{Expression ","}* params> )`, Collector c) {
+    c.useViaNamedType(lhs, {classId()}, functionName, {fieldId()});
     c.calculate("method `<functionName>`", current, lhs + [p | p <- params],
        AType(Solver s) { 
-            funType = s.getTypeInSourceType(lhs, functionName, {functionId()});
+            funType = s.getType(lhs);
             parType = atypeList([s.getType(e) | e <- params]);
             return computeCallType(functionName, funType, parType, s);
          }); 

@@ -19,7 +19,7 @@ module pico::Pico
   
 import Prelude;
 
-extend analysis::typepal::ExtractTModel;
+extend analysis::typepal::Collector;
 extend analysis::typepal::TypePal;
 extend analysis::typepal::TestFramework; 
 
@@ -97,19 +97,19 @@ void collect(current: (Expression) `<Id name>`, Collector c){
 void collect(current: (Statement) `<Id var> := <Expression val>`, Collector c){
      c.use(var, {variableId()});
      c.require("assignment", current, [var, val], 
-        void(Solver s){ s.equal(var, val, error(current, "Lhs %t should have same type as rhs", var)); });
+        void(Solver s){ s.requireEqual(var, val, error(current, "Lhs %t should have same type as rhs", var)); });
      collect(val, c);
 }
 
 void collect(current: (Statement) `if <Expression cond> then <{Statement ";"}*  thenPart> else <{Statement ";"}* elsePart> fi`, Collector c){
      c.require("if condition", current, [cond],
-        void (Solver s) {s.equal(cond, intType(), error(cond, "Condition should be `int`, found %t", cond)); });
+        void (Solver s) {s.requireEqual(cond, intType(), error(cond, "Condition should be `int`, found %t", cond)); });
      collect(cond, thenPart, elsePart, c);
 }
 
 void collect(current: (Statement) `while <Expression cond> do <{Statement ";"}* body> od`, Collector c){
      c.require("while condition", current, [cond],
-        void (Solver s) { s.equal(cond, intType(), error(cond, "Condition should be `int`, found %t", cond)); });
+        void (Solver s) { s.requireEqual(cond, intType(), error(cond, "Condition should be `int`, found %t", cond)); });
      collect(cond, body, c);
 }
 
@@ -128,8 +128,8 @@ void collect(current: (Expression) `<Expression lhs> + <Expression rhs>`, Collec
 void collect(current: (Expression) `<Expression lhs> - <Expression rhs>`, Collector c){
      c.calculate("subtraction", current, [lhs, rhs],
         AType (Solver s) { 
-                s.equal(lhs, intType(), error(lhs, "Left argument of `-` should be `int`, found %t", lhs));
-                s.equal(rhs, intType(), error(rhs, "Right argument of `-` should be `int`, found %t", rhs));
+                s.requireEqual(lhs, intType(), error(lhs, "Left argument of `-` should be `int`, found %t", lhs));
+                s.requireEqual(rhs, intType(), error(rhs, "Right argument of `-` should be `int`, found %t", rhs));
                 return intType();
         });
      collect(lhs, rhs, c);
