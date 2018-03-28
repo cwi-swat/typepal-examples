@@ -1,10 +1,9 @@
 module lang_features::StructAndStaticFields
 
-extend analysis::typepal::Collector;    // tmp
-extend analysis::typepal::TestFramework;    // tmp
-import ParseTree;
-
+extend analysis::typepal::TypePal;
 extend lang_features::CommonLex;
+
+import ParseTree;
 
 // ---- Programs with struct declarations and uses ----------------------------
 
@@ -116,7 +115,7 @@ TModel structTModelFromName(str mname, bool debug){
     return structTModelFromTree(pt, debug);
 }
 
-bool testStruct(bool debug = false) {
+bool testStructAndStaticFields(bool debug = false) {
     return runTests([|project://typepal-examples/src/lang_features/tests/struct_with_static_fields.ttl|], #start[Program], TModel (Tree t) {
         return structTModelFromTree(t, debug);
     });

@@ -1,12 +1,11 @@
 module lang_features::StructWithParameters
 
-extend analysis::typepal::Collector;    // tmp
-extend analysis::typepal::TestFramework;    // tmp
+extend analysis::typepal::TypePal;
+extend lang_features::CommonLex;
+
 import ParseTree;
 import List;
 import Set;
-
-extend lang_features::CommonLex;
 
 // ---- Programs with struct declarations and uses ----------------------------
 

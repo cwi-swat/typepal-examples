@@ -15,9 +15,6 @@ module dtfun::DTFun
 // Functional language with declared types
  
 extend analysis::typepal::TypePal;
-extend analysis::typepal::Collector;
-extend analysis::typepal::TestFramework;
-import analysis::typepal::TypePalConfig;
 
 import ParseTree;
 

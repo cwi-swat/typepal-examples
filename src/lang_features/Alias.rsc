@@ -1,7 +1,7 @@
 module lang_features::Alias
 
-extend analysis::typepal::Collector;    // tmp
-extend analysis::typepal::TestFramework;    // tmp
+extend analysis::typepal::TypePal;
+
 import ParseTree;
 import IO;
 

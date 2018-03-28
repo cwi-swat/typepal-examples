@@ -1,8 +1,7 @@
 module smallOO::SmallOO
  
-import analysis::typepal::TestFramework;
 extend analysis::typepal::TypePal;
-extend analysis::typepal::Collector; 
+
 import util::Reflective;
 import ParseTree;
 

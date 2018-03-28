@@ -19,9 +19,7 @@ module pico::Pico
   
 import Prelude;
 
-extend analysis::typepal::Collector;
 extend analysis::typepal::TypePal;
-extend analysis::typepal::TestFramework; 
 
 // ----  Pico syntax -------------------------------------
 

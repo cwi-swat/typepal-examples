@@ -1,10 +1,9 @@
 module lang_features::Struct
 
-extend analysis::typepal::Collector;    // tmp
-extend analysis::typepal::TestFramework;    // tmp
-import ParseTree;
-
+extend analysis::typepal::TypePal;
 extend lang_features::CommonLex;
+
+import ParseTree;
 
 // ---- Programs with struct declarations and uses ----------------------------
 
