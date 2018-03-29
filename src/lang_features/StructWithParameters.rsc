@@ -70,8 +70,8 @@ str prettyPrintAType(typeFormal(name)) = "<name>";
 str prettyPrintAType(structDef(name, formals)) = isEmpty(formals) ? "<name>" : "<name>[<intercalate(",", formals)>]";
 str prettyPrintAType(structType(name, actuals)) = isEmpty(actuals) ? "<name>" : "<name>[<intercalate(",", [prettyPrintAType(a) | a <- actuals])>]";
 
-AType instantiateTypeParametersSWP(structDef(str name, list[str] formals), structType(str name, list[AType] actuals), AType t){
-    if(size(formals) != size(actuals)) throw checkFailed();
+AType instantiateTypeParametersSWP(structDef(str name1, list[str] formals), structType(str name2, list[AType] actuals), AType t){
+    if(size(formals) != size(actuals)) throw checkFailed({});
     bindings = (formals[i] : actuals [i] | int i <- index(formals));
     
     return visit(t) { case typeFormal(str x) => bindings[x] };

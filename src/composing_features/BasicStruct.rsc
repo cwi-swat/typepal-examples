@@ -52,7 +52,7 @@ void collect(current:(Field)`<Id name> : <Type tp>`, Collector c) {
 }
 
 void collectType(current:(Type)`<Id _>`, Collector c) {
-    c.use(current, c.getConfig().typeRoles + {stru ctId()});
+    c.use(current, c.getConfig().typeRoles + {structId()});
 }
 
 AType lookupFieldType(Solver s, tp:structType(str nm), loc scope, Tree current, str fieldName) {
