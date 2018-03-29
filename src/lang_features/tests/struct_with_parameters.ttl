@@ -49,4 +49,4 @@ test WrongSelect1 [[
 test WrongSelect2 [[
     struct L[E] { E e, int n };
     int m = 123.n;
-]] expect { "Named type expected, found `int`" }
+]] expect { "Type of `n` could not be computed for `int` " }

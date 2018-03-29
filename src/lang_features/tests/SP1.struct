@@ -1,2 +1,3 @@
- struct L[E] { E e  , int n };
- L[int,str] li = new L[int,str];
+struct L[E] { E e, int n };
+L[int] li = new L[int];
+int n = li.n;

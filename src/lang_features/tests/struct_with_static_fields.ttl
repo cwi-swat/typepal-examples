@@ -24,3 +24,12 @@ test StaticStringAccess [[
     int n = s.length;
 ]]
 
+test StaticStringAccessUnkownField [[
+    str s = "a";
+    int n = s.xyz;
+]] expect { "Type of `xyz` could not be computed for `str` " }
+
+test StaticStringAccessWrongInit [[
+    str s = "a";
+    str n = s.length;
+]] expect { "Incorrect initialization, expected `str`, found `int`" }

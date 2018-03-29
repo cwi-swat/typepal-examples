@@ -45,6 +45,17 @@ str prettyPrintAType(intType()) = "int";
 str prettyPrintAType(strType()) = "str";
 str prettyPrintAType(structType(name)) = "struct <name>";
 
+tuple[bool isNamedType, str typeName, set[IdRole] idRoles] getTypeNameAndRoleStruct(structType(str name)){
+    return <true, name, {structId()}>;
+}
+
+default tuple[bool isNamedType, str typeName, set[IdRole] idRoles] getTypeNameAndRoleStruct(AType t){
+    return <false, "", {}>;
+}
+
+TypePalConfig structConfig() =
+    tconfig(getTypeNameAndRole = getTypeNameAndRoleStruct);
+
 // ---- Collect facts and constraints -----------------------------------------
 
 void collect(current:(Declaration)`<Type typ> <Id id> = <Expression exp> ;`, Collector c) {
@@ -87,7 +98,7 @@ void collect(current:(Expression) `new <Id name>`, Collector c){
 }
    
 void collect(current:(Expression)`<Expression lhs> . <Id fieldName>`, Collector c) {
-    c.useViaNamedType(lhs, {structId()}, fieldName, {fieldId()});
+    c.useViaType(lhs, fieldName, {fieldId()});
     c.sameType(current, fieldName);
     collect(lhs, c);
 }
@@ -107,7 +118,7 @@ void collect(current:(Expression)`<Id use>`, Collector c) {
 // ---- Testing ---------------------------------------------------------------
 
 TModel structTModelFromTree(Tree pt, bool debug){
-    return collectAndSolve(pt, debug=debug);
+    return collectAndSolve(pt, config = structConfig(), debug=debug);
 }
 
 TModel structTModelFromName(str mname, bool debug){

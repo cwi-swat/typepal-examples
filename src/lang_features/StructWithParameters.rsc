@@ -70,17 +70,32 @@ str prettyPrintAType(typeFormal(name)) = "<name>";
 str prettyPrintAType(structDef(name, formals)) = isEmpty(formals) ? "<name>" : "<name>[<intercalate(",", formals)>]";
 str prettyPrintAType(structType(name, actuals)) = isEmpty(actuals) ? "<name>" : "<name>[<intercalate(",", [prettyPrintAType(a) | a <- actuals])>]";
 
-AType swpInstantiateTypeParameters(structDef(str name, list[str] formals), structType(str name, list[AType] actuals), AType t){
+AType instantiateTypeParametersSWP(structDef(str name, list[str] formals), structType(str name, list[AType] actuals), AType t){
     if(size(formals) != size(actuals)) throw checkFailed();
     bindings = (formals[i] : actuals [i] | int i <- index(formals));
     
     return visit(t) { case typeFormal(str x) => bindings[x] };
 }
 
-default AType swpInstantiateTypeParameters(AType def, AType ins, AType act) = act;
+default AType instantiateTypeParametersSWP(AType def, AType ins, AType act) = act;
 
-TypePalConfig swpConfig() =
-    tconfig(instantiateTypeParameters = swpInstantiateTypeParameters);
+
+tuple[bool isNamedType, str typeName, set[IdRole] idRoles] getTypeNameAndRoleSWP(structType(str name, list[AType] actuals)){
+    return <true, name, {structId()}>;
+}
+
+default tuple[bool isNamedType, str typeName, set[IdRole] idRoles] getTypeNameAndRoleSWP(AType t){
+    return <false, "", {}>;
+}
+
+AType getTypeInNamelessTypeSWP(AType containerType, Tree selector, set[IdRole] idRolesSel, loc scope, Solver s){
+    s.report(error(selector, "Undefined field %q on %t", selector, containerType));
+}
+
+TypePalConfig configSWP() =
+    tconfig(getTypeNameAndRole = getTypeNameAndRoleSWP,
+            getTypeInNamelessType = getTypeInNamelessTypeSWP,
+            instantiateTypeParameters = instantiateTypeParametersSWP);
 
 // ---- Collect facts and constraints -----------------------------------------
 
@@ -152,8 +167,7 @@ void collect(current:(Expression) `new <Id name><TypeActuals actuals>`, Collecto
 }
    
 void collect(current:(Expression)`<Expression lhs> . <Id fieldName>`, Collector c) {
-    c.useViaNamedType(lhs, {structId()}, fieldName, {fieldId()});
-    
+    c.useViaType(lhs, fieldName, {fieldId()});
     c.sameType(current, fieldName);
     collect(lhs, c);
 }
@@ -172,17 +186,17 @@ void collect(current:(Expression)`<Id use>`, Collector c) {
 
 // ---- Testing ---------------------------------------------------------------
 
-TModel StructParamTModelFromTree(Tree pt, bool debug){
-    return collectAndSolve(pt, config = swpConfig(), debug=debug);
+TModel SWPTModelFromTree(Tree pt, bool debug){
+    return collectAndSolve(pt, config = configSWP(), debug=debug);
 }
 
-TModel StructParamTModelFromName(str mname, bool debug){
+TModel SWPTModelFromName(str mname, bool debug){
     pt = parse(#start[Program], |project://typepal-examples/src/lang_features/tests/<mname>.struct|).top;
-    return StructParamTModelFromTree(pt, debug);
+    return SWPTModelFromTree(pt, debug);
 }
 
-bool testStructWithParameters(bool debug = false) {
+bool testSWP(bool debug = false) {
     return runTests([|project://typepal-examples/src/lang_features/tests/struct_with_parameters.ttl|], #start[Program], TModel (Tree t) {
-        return StructParamTModelFromTree(t, debug);
+        return SWPTModelFromTree(t, debug);
     });
 }

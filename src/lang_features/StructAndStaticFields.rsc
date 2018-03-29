@@ -45,6 +45,25 @@ str prettyPrintAType(intType()) = "int";
 str prettyPrintAType(strType()) = "str";
 str prettyPrintAType(structType(name)) = "struct <name>";
 
+
+tuple[bool isNamedType, str typeName, set[IdRole] idRoles] getTypeNameAndRoleStructAndStatic(structType(str name)){
+    return <true, name, {structId()}>;
+}
+
+default tuple[bool isNamedType, str typeName, set[IdRole] idRoles] getTypeNameAndRoleStructAndStatic(AType t){
+    return <false, "", {}>;
+}
+
+AType getTypeInNamelessTypeStructAndStatic(AType containerType, Tree selector, set[IdRole] idRolesSel, loc scope, Solver s){
+    if(containerType == strType() && "<selector>" == "length") return intType();
+    s.report(error(selector, "Undefined field %q on %t", selector, containerType));
+}
+
+TypePalConfig structAndStaticConfig() =
+    tconfig(getTypeNameAndRole = getTypeNameAndRoleStructAndStatic,
+            getTypeInNamelessType = getTypeInNamelessTypeStructAndStatic);
+
+
 // ---- Collect facts and constraints -----------------------------------------
 
 void collect(current:(Declaration)`<Type typ> <Id id> = <Expression exp> ;`, Collector c) {
@@ -87,7 +106,7 @@ void collect(current:(Expression) `new <Id name>`, Collector c){
 }
    
 void collect(current:(Expression)`<Expression lhs> . <Id fieldName>`, Collector c) {
-    c.useViaNamedType(lhs, {structId()}, fieldName, {fieldId()});
+    c.useViaType(lhs, fieldName, {fieldId()});
     c.sameType(current, fieldName);
     collect(lhs, c);
 }
@@ -107,7 +126,7 @@ void collect(current:(Expression)`<Id use>`, Collector c) {
 // ---- Testing ---------------------------------------------------------------
 
 TModel structTModelFromTree(Tree pt, bool debug){
-    return collectAndSolve(pt, debug=debug);
+    return collectAndSolve(pt, config=structAndStaticConfig(), debug=debug);
 }
 
 TModel structTModelFromName(str mname, bool debug){
