@@ -5,6 +5,7 @@ import analysis::typepal::TestFramework;
 extend analysis::typepal::TypePal;
 extend analysis::typepal::Collector;
 import ParseTree;
+import IO;
 
 extend composing_features::BasicExpressions;
 
@@ -102,7 +103,7 @@ void collect(current:(Declaration)`fun <Type returnType> <Id name> ( <{Parameter
     c.enterScope(current);
         c.require("return type expression", returnExpression, [returnType, returnExpression], 
             void (Solver s) {
-                s.requireEqual(returnType, returnExpression) || s.reportError(returnExpression, "is not of defined type <s.fmt(returnType)> (it is of <fmt(returnExpression)> type)");
+                s.requireEqual(returnType, returnExpression, error(returnExpression, "is not of defined type %t (it is of %t type)", returnType, returnExpression));
         });
         collect(params, returnExpression, c);
     c.leaveScope(current);
@@ -120,7 +121,7 @@ void collect(current:(Expression)`<Id functionName> ( <{Expression ","}* params>
         AType(Solver s) {
             fType = s.getType(functionName);
             actuals = atypeList([s.getType(p) | p <- params]);
-            s.requireEqual(fType.formals, actuals) || s.reportError(current, "Type of parameters are incorrect. Got <s.fmt(actuals)>, expected <s.fmt(fType.formals)>");
+            s.requireEqual(fType.formals, actuals, error(current, "Type of parameters are incorrect. Got %t, expected %t", actuals, fType.formals));
             return fType.returnType;
         });
     
@@ -131,11 +132,6 @@ void collect(current:(Expression)`<Id functionName> ( <{Expression ","}* params>
                
 TModel moduleTModelFromTree(Tree pt, PathConfig pcfg, bool debug){
     return collectAndSolve(pt, config = getSimpleModuleConfig(), debug=debug);
-}
-
-TModel moduleTModelFromName(str mname, PathConfig pcfg, bool debug){
-    pt = parse(#start[TestModules], |project://typepal-examples/src/composing_features/tests/<mname>.simple|).top;
-    return moduleTModelFromName(pt, pcfg, debug);
 }
 
 bool testModules(bool debug = false, PathConfig pcfg = pathConfig()) {
