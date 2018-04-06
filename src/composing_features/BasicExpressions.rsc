@@ -65,7 +65,7 @@ AType infixPlus(intType(), intType(), Tree current, Solver s) = intType();
 AType infixPlus(strType(), strType(), Tree current, Solver s) = strType();
 
 default AType infixPlus(AType lhsType, AType rhsType, Tree current, Solver s) {
-   s.reportError(current, "+ not defined between <s.fmt(lhsType)> and <s.fmt(rhsType)>");
+   s.report(error(current, "+ not defined on %t and %t", lhsType, rhsType));
 }
 
 void collect(current:(Expression)`<Expression lhs> + <Expression rhs>`, Collector c) {
@@ -83,7 +83,7 @@ TModel expressionTModule(Tree pt, bool debug){
 }
 
 bool testExpressions(bool debug = false) {
-    return runTests([|project://typepal-examples/src/features/tests/expressions.ttl|], #start[Expression], TModel (Tree t) {
+    return runTests([|project://typepal-examples/src/composing_features/tests/expressions.ttl|], #start[Expression], TModel (Tree t) {
         return expressionTModule(t, debug);
     });
 }

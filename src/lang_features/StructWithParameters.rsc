@@ -70,14 +70,14 @@ str prettyPrintAType(typeFormal(name)) = "<name>";
 str prettyPrintAType(structDef(name, formals)) = isEmpty(formals) ? "<name>" : "<name>[<intercalate(",", formals)>]";
 str prettyPrintAType(structType(name, actuals)) = isEmpty(actuals) ? "<name>" : "<name>[<intercalate(",", [prettyPrintAType(a) | a <- actuals])>]";
 
-AType instantiateTypeParametersSWP(structDef(str name1, list[str] formals), structType(str name2, list[AType] actuals), AType t){
+AType instantiateTypeParametersSWP(Tree selector, structDef(str name1, list[str] formals), structType(str name2, list[AType] actuals), AType t, Solver s){
     if(size(formals) != size(actuals)) throw checkFailed({});
     bindings = (formals[i] : actuals [i] | int i <- index(formals));
     
     return visit(t) { case typeFormal(str x) => bindings[x] };
 }
 
-default AType instantiateTypeParametersSWP(AType def, AType ins, AType act) = act;
+default AType instantiateTypeParametersSWP(Tree selector, AType def, AType ins, AType act, Solver s) = act;
 
 
 tuple[bool isNamedType, str typeName, set[IdRole] idRoles] getTypeNameAndRoleSWP(structType(str name, list[AType] actuals)){
@@ -88,7 +88,7 @@ default tuple[bool isNamedType, str typeName, set[IdRole] idRoles] getTypeNameAn
     return <false, "", {}>;
 }
 
-AType getTypeInNamelessTypeSWP(AType containerType, Tree selector, set[IdRole] idRolesSel, loc scope, Solver s){
+AType getTypeInNamelessTypeSWP(AType containerType, Tree selector, loc scope, Solver s){
     s.report(error(selector, "Undefined field %q on %t", selector, containerType));
 }
 
@@ -100,10 +100,8 @@ TypePalConfig configSWP() =
 // ---- Collect facts and constraints -----------------------------------------
 
 void collect(current:(Declaration)`<Type typ> <Id id> = <Expression exp> ;`, Collector c) {
-    c.define("<id>", variableId(), current, defGetType(typ));
-    c.require("declaration of <id>", current, [typ, exp],
-        void(Solver s){ s.requireEqual(typ, exp, error(exp, "Incorrect initialization, expected %t, found %t", typ, exp)); }
-       );
+    c.define("<id>", variableId(), current, defType(typ));
+    c.requireEqual(typ, exp, error(exp, "Incorrect initialization, expected %t, found %t", typ, exp));
     c.enterScope(current);
         collect(typ, exp, c);
     c.leaveScope(current);
@@ -121,7 +119,7 @@ void collect(current:(Declaration) `struct <Id name> <TypeFormals formals> { <{F
 }
 
 void collect(current:(Field)`<Type typ> <Id name>`, Collector c) {
-    c.define("<name>", fieldId(), current, defGetType(typ));
+    c.define("<name>", fieldId(), current, defType(typ));
     collect(typ, c);
 } 
 

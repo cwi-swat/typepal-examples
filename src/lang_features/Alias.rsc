@@ -37,7 +37,6 @@ data AType
     = intType()
     | strType()
     | structType(str name)
-    //| userType(str name, loc scope)
     ;
     
 data IdRole
@@ -49,6 +48,18 @@ data IdRole
 str prettyPrintAType(intType()) = "int";
 str prettyPrintAType(strType()) = "str";
 str prettyPrintAType(structType(name)) = "struct <name>";
+
+tuple[bool isNamedType, str typeName, set[IdRole] idRoles] getTypeNameAndRoleAlias(structType(str name)){
+    return <true, name, {structId()}>;
+}
+
+default tuple[bool isNamedType, str typeName, set[IdRole] idRoles] getTypeNameAndRoleAlias(AType t){
+    return <false, "", {}>;
+}
+
+TypePalConfig aliasConfig() =
+    tconfig(getTypeNameAndRole = getTypeNameAndRoleAlias);
+
  
 // ---- Collect facts and constraints -----------------------------------------
 
@@ -59,10 +70,8 @@ void collect(current: (Program) `<Declaration* decls>`, Collector c){
 }
 
 void collect(current:(Declaration)`<Type typ> <Id id> = <Expression exp> ;`, Collector c) {
-    c.define("<id>", variableId(), current, defGetType(typ));
-    c.require("declaration of `<id>`", current, [typ, exp],
-        void(Solver s){ s.requireEqual(typ, exp, error(exp, "Incorrect initialization, expected %t, found %t", typ, exp)); }
-       );
+    c.define("<id>", variableId(), current, defType(typ));
+    c.requireEqual(typ, exp, error(exp, "Incorrect initialization, expected %t, found %t", typ, exp));
     c.enterScope(current);
         collect(typ, exp, c);
     c.leaveScope(current);
@@ -76,14 +85,14 @@ void collect(current:(Declaration)`struct <Id name> { <{Field ","}* fields> };`,
 }
 
 void collect(current:(Declaration)`alias <Id name> = <Type typ>;`, Collector c) {
-    c.define("<name>", aliasId(), current, defGetType(typ));
+    c.define("<name>", aliasId(), current, defType(typ));
     c.enterScope(current);; 
         collect(typ, c);
     c.leaveScope(current);
 }
 
 void collect(current:(Field)`<Type typ> <Id name>`, Collector c) {
-    c.define("<name>", fieldId(), current, defGetType(typ));
+    c.define("<name>", fieldId(), current, defType(typ));
     collect(typ, c);
 }
 
@@ -105,9 +114,8 @@ void collect(current:(Expression) `new <Id name>`, Collector c){
 }
 
 void collect(current:(Expression)`<Expression lhs> . <Id fieldName>`, Collector c) {
-    c.useViaNamedType(lhs, {structId()}, fieldName, {fieldId()});
-    c.sameType(current, fieldName);
-        
+    c.useViaType(lhs, fieldName, {fieldId()});
+    c.sameType(current, fieldName);  
     collect(lhs, c);
 }
 
@@ -126,7 +134,7 @@ void collect(current:(Expression)`<Id use>`, Collector c) {
 // ---- Testing ---------------------------------------------------------------
 
 TModel aliasTModelFromTree(Tree pt, bool debug = false){
-    return collectAndSolve(pt, debug=debug);
+    return collectAndSolve(pt, config = aliasConfig(), debug=debug);
 }
 
 TModel aliasTModelFromName(str mname, bool debug = false){

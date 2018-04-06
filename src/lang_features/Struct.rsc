@@ -59,10 +59,8 @@ TypePalConfig structConfig() =
 // ---- Collect facts and constraints -----------------------------------------
 
 void collect(current:(Declaration)`<Type typ> <Id id> = <Expression exp> ;`, Collector c) {
-    c.define("<id>", variableId(), current, defGetType(typ));
-    c.require("declaration of <id>", current, [typ, exp],
-        void(Solver s){ s.requireEqual(typ, exp, error(exp, "Incorrect initialization, expected %t, found %t", typ, exp)); }
-       );
+    c.define("<id>", variableId(), current, defType(typ));
+    c.requireEqual(typ, exp, error(exp, "Incorrect initialization, expected %t, found %t", typ, exp));
     c.enterScope(current);
         collect(typ, exp, c);
     c.leaveScope(current);
@@ -76,7 +74,7 @@ void collect(current:(Declaration)`struct <Id name> { <{Field ","}* fields> };`,
 }
 
 void collect(current:(Field)`<Type typ> <Id name>`, Collector c) {
-    c.define("<name>", fieldId(), current, defGetType(typ));
+    c.define("<name>", fieldId(), current, defType(typ));
     collect(typ, c);
 }
 

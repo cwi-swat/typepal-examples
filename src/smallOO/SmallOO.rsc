@@ -72,6 +72,18 @@ str prettyPrintAType(intType()) = "int";
 str prettyPrintAType(strType()) = "str";
 str prettyPrintAType(classType(str name)) = name;
 
+
+tuple[bool isNamedType, str typeName, set[IdRole] idRoles] getTypeNameAndRoleSmall(classType(str name)){
+    return <true, name, {classId()}>;
+}
+
+default tuple[bool isNamedType, str typeName, set[IdRole] idRoles] getTypeNameAndRoleSmall(AType t){
+    return <false, "", {}>;
+}
+
+TypePalConfig smallConfig() =
+    tconfig(getTypeNameAndRole = getTypeNameAndRoleSmall);
+
 // ---- collect ---------------------------------------------------------------
 
 void collect(current:(Module)`module <Identifier _> <Import* _> <Declaration* decls>`, Collector c) {
@@ -135,13 +147,13 @@ void collect(current:(Expression)`<Identifier functionName> ( <{Expression ","}*
 }
 
 void collect(current:(Expression)`<Expression lhs> . <Identifier id>`, Collector c) {
-    c.useViaNamedType(lhs, {classId()}, id, {fieldId()});
+    c.useViaType(lhs, id, {fieldId()});
     collect(lhs, c);           
 }
 
 void collect(current:(Expression)`<Expression lhs> . <Identifier functionName> ( <{Expression ","}* params> )`, Collector c) {
-    c.useViaNamedType(lhs, {classId()}, functionName, {fieldId()});
-    c.calculate("method `<functionName>`", current, lhs + [p | p <- params],
+    c.useViaType(lhs, functionName, {fieldId()});
+    c.calculate("method `<functionName>`", current, [lhs, functionName] + [p | p <- params],
        AType(Solver s) { 
             funType = s.getType(lhs);
             parType = atypeList([s.getType(e) | e <- params]);
@@ -184,7 +196,7 @@ void collect(current:(Expression)`<Expression lhs> + <Expression rhs>`, Collecto
 // ---- Testing ---------------------------------------------------------------
                
 TModel smallOOTModelFromTree(Tree pt, bool debug){
-    return collectAndSolve(pt, debug=debug);
+    return collectAndSolve(pt, config=smallConfig(), debug=debug);
 }
 
 TModel smallOOTModelFromName(str mname, bool debug){
