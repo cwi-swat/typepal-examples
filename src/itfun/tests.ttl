@@ -22,7 +22,7 @@ test Id3 [[ fun x { x }(true) ]]
 
 test Inc1 [[ fun x { x + 1 } ]]
 test Inc2 [[ fun x { x + 1 }(2) ]]
-test Inc3 [[ fun x { x + 1 }(true) ]] expect {"Incorrect type of actual parameter, expected `int`, found `bool`"}
+test Inc3 [[ fun x { x + 1 }(true) ]] expect {"No version of + is applicable for `bool` and `int`"}
 
 test If1 [[ if true then 1 else 2 fi ]]
 test If2 [[ if true then true else false fi ]]

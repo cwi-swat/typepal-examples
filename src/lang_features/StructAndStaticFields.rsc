@@ -105,7 +105,7 @@ void collect(current:(Expression) `new <Id name>`, Collector c){
    
 void collect(current:(Expression)`<Expression lhs> . <Id fieldName>`, Collector c) {
     c.useViaType(lhs, fieldName, {fieldId()});
-    c.sameType(current, fieldName);
+    c.fact(current, fieldName);
     collect(lhs, c);
 }
 

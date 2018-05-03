@@ -1,4 +1,4 @@
-module M1
+  module M
     
     class A {
         int f;
@@ -6,6 +6,5 @@ module M1
     
     class B {
         A a;
-        
-        int g(int p) = a.f + p;
+        int g(int p) = a.g + p;
     }

@@ -60,13 +60,9 @@ data AType
 data IdRole
     = fieldId()
     | parameterId()
-    | functionId()
+    | methodId()
     | classId()
     ;
-
-AType convertType((Type) `int`) = intType();
-AType convertType((Type) `str`) = strType();
-AType convertType((Type) `<Identifier className>`) = classType("<className>");
 
 str prettyPrintAType(intType()) = "int";
 str prettyPrintAType(strType()) = "str";
@@ -100,13 +96,12 @@ void collect(current:(Declaration)`class <Identifier className> { <Declaration* 
 void collect(current:(Declaration)`<Type returnType> <Identifier functionName> ( <{Parameter ","}* params> ) = <Expression returnExpression> ;`, Collector c) {
     classScope = c.getScope(); 
     c.enterScope(current); {
-        retType = convertType(returnType);
-        c.defineInScope(classScope, "<functionName>", functionId(), functionName, 
-            defType([p.name | p <- params], AType(Solver s) { return functionType(retType, atypeList([s.getType(p.name) | p <- params])); }));
+        c.defineInScope(classScope, "<functionName>", methodId(), functionName, 
+            defType(returnType + [p.name | p <- params], AType(Solver s) { return functionType(s.getType(returnType), atypeList([s.getType(p.name) | p <- params])); }));
      
-        c.require("return expression", returnExpression, [returnExpression],
+        c.require("return expression", returnExpression, [returnType, returnExpression],
             void (Solver s) {
-                s.requireEqual(retType, returnExpression, error(returnExpression, "Return expression is not the same type as the return type (%t) instead of (%t)", returnExpression, retType));
+                s.requireEqual(returnType, returnExpression, error(returnExpression, "Return expression is not the same type as the return type (%t) instead of (%t)", returnExpression, returnType));
         });
         collect(returnType, params, returnExpression, c);
     }
@@ -114,24 +109,31 @@ void collect(current:(Declaration)`<Type returnType> <Identifier functionName> (
 }
 
 void collect(current:(Declaration)`<Type fieldType> <Identifier fieldName>;`, Collector c) {
-    ft = convertType(fieldType);
-    c.define("<fieldName>", fieldId(), fieldName, defType(ft));
+    c.define("<fieldName>", fieldId(), fieldName, defType(fieldType));
+    c.fact(current, fieldType);
     collect(fieldType, c);
 }
 
 void collect(current:(Parameter)`<Type paramType> <Identifier paramName>`, Collector c) {
-    c.define("<paramName>", parameterId(), paramName, defType(convertType(paramType)));
+    c.define("<paramName>", parameterId(), paramName, defType(paramType));
+    c.fact(current, paramType);
     collect(paramType, c);
 }
 
 void collect(current:(Expression)`<Identifier id>`, Collector c) {
-    c.use(id, {fieldId(), parameterId(), functionId()});
+    c.use(id, {fieldId(), parameterId(), methodId()});
 }
 
-void collect(current:(Type)`<Type typ>`, Collector c) {
-    if(classType(_) := convertType(typ)){
-        c.use(typ, {classId()});
-    }
+void collect(current:(Type) `int`, Collector c){
+    c.fact(current, intType());
+}
+
+void collect(current:(Type) `str`, Collector c){
+    c.fact(current, strType());
+}
+
+void collect(current:(Type) `<Identifier className>`, Collector c){
+   c.use(className, {classId()});
 }
 
 void collect(current:(Expression)`<Integer _>`, Collector c) {
@@ -143,26 +145,6 @@ void collect(current:(Expression)`<String _>`, Collector c) {
 }
 
 void collect(current:(Expression)`<Identifier functionName> ( <{Expression ","}* params> )`, Collector c) {
-    collectFunctionCall(functionName, params, c);
-}
-
-void collect(current:(Expression)`<Expression lhs> . <Identifier id>`, Collector c) {
-    c.useViaType(lhs, id, {fieldId()});
-    collect(lhs, c);           
-}
-
-void collect(current:(Expression)`<Expression lhs> . <Identifier functionName> ( <{Expression ","}* params> )`, Collector c) {
-    c.useViaType(lhs, functionName, {fieldId()});
-    c.calculate("method `<functionName>`", current, [lhs, functionName] + [p | p <- params],
-       AType(Solver s) { 
-            funType = s.getType(lhs);
-            parType = atypeList([s.getType(e) | e <- params]);
-            return computeCallType(functionName, funType, parType, s);
-         }); 
-    collect(lhs, functionName, params, c);  
-}
-
-void collectFunctionCall(Identifier functionName, {Expression ","}* params, Collector c) {
     c.calculate("call function `<functionName>`", functionName, [functionName] + [ e | e <- params], 
         AType(Solver s) {
             funType = s.getType(functionName);
@@ -170,6 +152,23 @@ void collectFunctionCall(Identifier functionName, {Expression ","}* params, Coll
             return computeCallType(functionName, funType, parType, s);
         });
     collect(params, c);
+}
+
+void collect(current:(Expression)`<Expression lhs> . <Identifier id>`, Collector c) {
+    c.useViaType(lhs, id, {fieldId()});
+    c.fact(current, id);
+    collect(lhs, c);           
+}
+
+void collect(current:(Expression)`<Expression lhs> . <Identifier functionName> ( <{Expression ","}* params> )`, Collector c) {
+    c.useViaType(lhs, functionName, {methodId()});
+    c.calculate("method `<functionName>`", current, [p | p <- params],
+       AType(Solver s) { 
+            funType = s.getType(functionName);
+            parType = atypeList([s.getType(e) | e <- params]);
+            return computeCallType(functionName, funType, parType, s);
+         }); 
+    collect(lhs, params, c);  
 }
 
 AType computeCallType(Identifier functionName, AType funType, AType parTypes, Solver s){

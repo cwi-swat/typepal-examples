@@ -27,7 +27,7 @@ test StaticStringAccess [[
 test StaticStringAccessUnkownField [[
     str s = "a";
     int n = s.xyz;
-]] expect { "Type of `xyz` could not be computed for `str` " }
+]] expect { "Unresolved type for `xyz`" }
 
 test StaticStringAccessWrongInit [[
     str s = "a";

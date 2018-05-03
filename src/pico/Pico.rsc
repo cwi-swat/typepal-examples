@@ -138,7 +138,7 @@ void collect(current: (Expression) `<Natural natcon>`, Collector c){
 // ----  Examples & Tests --------------------------------
 
 TModel picoTModelFromName(str name, bool debug = false) {
-    Tree pt = parse(#Program, |project://typepal-examples/src/pico/<name>.pico|);
+    Tree pt = parse(#start[Program], |project://typepal-examples/src/pico/<name>.pico|);
     return collectAndSolve(pt, debug=debug);
 }
 

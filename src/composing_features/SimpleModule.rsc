@@ -82,7 +82,7 @@ void collect(current:(Import)`import <Id name>;`, Collector c) {
 }
 
 void collect(current:(Declaration)`var <Id name> = <Expression init>;`, Collector c) {
-    c.define("<name>", variableId(), current, defGetType(init));
+    c.define("<name>", variableId(), current, defType(init));
     collect(init, c);
 }
 
@@ -100,16 +100,13 @@ void collect(current:(Declaration)`fun <Type returnType> <Id name> ( <{Parameter
     collect(returnType + argTypes, c);
 
     c.enterScope(current);
-        c.require("return type expression", returnExpression, [returnType, returnExpression], 
-            void (Solver s) {
-                s.requireEqual(returnType, returnExpression) || s.reportError(returnExpression, "is not of defined type <s.fmt(returnType)> (it is of <fmt(returnExpression)> type)");
-        });
+        c.requireEqual(returnType, returnExpression, error(returnExpression, "Expected %t, found %t", returnType, returnExpression));
         collect(params, returnExpression, c);
     c.leaveScope(current);
 }
 
 void collect(current:(Parameter)`<Type tp> <Id name>`, Collector c) {
-    c.define("<name>", parameterId(), current, defGetType(tp));
+    c.define("<name>", parameterId(), current, defType(tp));
     collect(tp, c);
 }
 
@@ -120,7 +117,7 @@ void collect(current:(Expression)`<Id functionName> ( <{Expression ","}* params>
         AType(Solver s) {
             fType = s.getType(functionName);
             actuals = atypeList([s.getType(p) | p <- params]);
-            s.requireEqual(fType.formals, actuals) || s.reportError(current, "Type of parameters are incorrect. Got <s.fmt(actuals)>, expected <s.fmt(fType.formals)>");
+            s.requireEqual(fType.formals, actuals, error(current, "Type of parameters are incorrect. Got %t, expected %t", actuals, fType.formals));
             return fType.returnType;
         });
     

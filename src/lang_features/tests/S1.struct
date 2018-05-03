@@ -1,3 +1,3 @@
 struct A { int n, str s };
-A a = new A;
-int n = a.n;
+   A a = new A;
+   int n = a.n;

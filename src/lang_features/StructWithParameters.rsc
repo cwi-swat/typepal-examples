@@ -70,32 +70,32 @@ str prettyPrintAType(typeFormal(name)) = "<name>";
 str prettyPrintAType(structDef(name, formals)) = isEmpty(formals) ? "<name>" : "<name>[<intercalate(",", formals)>]";
 str prettyPrintAType(structType(name, actuals)) = isEmpty(actuals) ? "<name>" : "<name>[<intercalate(",", [prettyPrintAType(a) | a <- actuals])>]";
 
-AType instantiateTypeParametersSWP(Tree selector, structDef(str name1, list[str] formals), structType(str name2, list[AType] actuals), AType t, Solver s){
+AType instantiateTypeParametersStructWithParameters(Tree selector, structDef(str name1, list[str] formals), structType(str name2, list[AType] actuals), AType t, Solver s){
     if(size(formals) != size(actuals)) throw checkFailed({});
     bindings = (formals[i] : actuals [i] | int i <- index(formals));
     
     return visit(t) { case typeFormal(str x) => bindings[x] };
 }
 
-default AType instantiateTypeParametersSWP(Tree selector, AType def, AType ins, AType act, Solver s) = act;
+default AType instantiateTypeParametersStructWithParameters(Tree selector, AType def, AType ins, AType act, Solver s) = act;
 
 
-tuple[bool isNamedType, str typeName, set[IdRole] idRoles] getTypeNameAndRoleSWP(structType(str name, list[AType] actuals)){
+tuple[bool isNamedType, str typeName, set[IdRole] idRoles] getTypeNameAndRoleStructWithParameters(structType(str name, list[AType] actuals)){
     return <true, name, {structId()}>;
 }
 
-default tuple[bool isNamedType, str typeName, set[IdRole] idRoles] getTypeNameAndRoleSWP(AType t){
+default tuple[bool isNamedType, str typeName, set[IdRole] idRoles] getTypeNameAndRoleStructWithParameters(AType t){
     return <false, "", {}>;
 }
 
-AType getTypeInNamelessTypeSWP(AType containerType, Tree selector, loc scope, Solver s){
+AType getTypeInNamelessTypeStructWithParameters(AType containerType, Tree selector, loc scope, Solver s){
     s.report(error(selector, "Undefined field %q on %t", selector, containerType));
 }
 
-TypePalConfig configSWP() =
-    tconfig(getTypeNameAndRole = getTypeNameAndRoleSWP,
-            getTypeInNamelessType = getTypeInNamelessTypeSWP,
-            instantiateTypeParameters = instantiateTypeParametersSWP);
+TypePalConfig configStructWithParameters() =
+    tconfig(getTypeNameAndRole = getTypeNameAndRoleStructWithParameters,
+            getTypeInNamelessType = getTypeInNamelessTypeStructWithParameters,
+            instantiateTypeParameters = instantiateTypeParametersStructWithParameters);
 
 // ---- Collect facts and constraints -----------------------------------------
 
@@ -142,7 +142,7 @@ void collect(current: (Type) `<Id name> <TypeActuals actuals>`, Collector c){
             
         collect(actuals, c);
     } else {
-        c.sameType(current, name);
+        c.fact(current, name);
     }
 }
 
@@ -166,7 +166,7 @@ void collect(current:(Expression) `new <Id name><TypeActuals actuals>`, Collecto
    
 void collect(current:(Expression)`<Expression lhs> . <Id fieldName>`, Collector c) {
     c.useViaType(lhs, fieldName, {fieldId()});
-    c.sameType(current, fieldName);
+    c.fact(current, fieldName);
     collect(lhs, c);
 }
 
@@ -184,17 +184,17 @@ void collect(current:(Expression)`<Id use>`, Collector c) {
 
 // ---- Testing ---------------------------------------------------------------
 
-TModel SWPTModelFromTree(Tree pt, bool debug){
-    return collectAndSolve(pt, config = configSWP(), debug=debug);
+TModel StructWithParametersTModelFromTree(Tree pt, bool debug){
+    return collectAndSolve(pt, config = configStructWithParameters(), debug=debug);
 }
 
-TModel SWPTModelFromName(str mname, bool debug){
+TModel StructWithParametersTModelFromName(str mname, bool debug){
     pt = parse(#start[Program], |project://typepal-examples/src/lang_features/tests/<mname>.struct|).top;
-    return SWPTModelFromTree(pt, debug);
+    return StructWithParametersTModelFromTree(pt, debug);
 }
 
-bool testSWP(bool debug = false) {
+bool testStructWithParameters(bool debug = false) {
     return runTests([|project://typepal-examples/src/lang_features/tests/struct_with_parameters.ttl|], #start[Program], TModel (Tree t) {
-        return SWPTModelFromTree(t, debug);
+        return StructWithParametersTModelFromTree(t, debug);
     });
 }

@@ -35,7 +35,19 @@ data IdRole
 
 // **** Configure
 
+tuple[bool isNamedType, str typeName, set[IdRole] idRoles] getTypeNameAndRoleStruct(structType(str name)){
+    return <true, name, {structId()}>;
+}
+
+default tuple[bool isNamedType, str typeName, set[IdRole] idRoles] getTypeNameAndRoleStruct(AType t){
+    return <false, "", {}>;
+}
+
 data TypePalConfig(set[IdRole] typeRoles = {});
+
+TypePalConfig getSimpleModuleConfig() 
+    = tconfig(getTypeNameAndRole = getTypeNameAndRoleStruct);
+    
 
 // **** Collect facts and constraints
 
@@ -47,7 +59,7 @@ void collect(current:(Struct)`struct <Id name> { <{Field ","}* fields> };`, Coll
 }
 
 void collect(current:(Field)`<Id name> : <Type tp>`, Collector c) {
-    c.define("<name>", fieldId(), current, defGetType(tp));
+    c.define("<name>", fieldId(), current, defType(tp));
     collect(tp, c);
 }
 
@@ -69,22 +81,10 @@ default AType lookupFieldType(AType typ, loc scope, Tree current, str fieldName)
 } 
 
 void collect(current:(Expression)`<Expression lhs> . <Id fieldName>`, Collector c) {
-    currentScope = c.getScope();
-    c.calculate("field select return type", current, [lhs], 
-        AType(Solver s) {
-            return lookupFieldType(c, s.getType(lhs), currentScope, current, "<fieldName>");
-        });
+    c.useViaType(lhs, fieldName, {fieldId()});
+    c.fact(current, fieldName);
     collect(lhs, c);
 }
-
-//void collect(current:(Expression)`<Expression lhs> . <Id fieldName>`, Collector c) {
-//    //currentScope = c.getScope();
-//    c.useIndirect(current, lhs, {structId()}, fieldName, {fieldId()});
-//    //c.calculate("field select return type", current, [lhs], AType() {
-//    //    return lookupFieldType(getType(lhs), currentScope, current, "<fieldName>");
-//    //});
-//    collect(lhs, c);
-//}
 
 // **** Testing
 

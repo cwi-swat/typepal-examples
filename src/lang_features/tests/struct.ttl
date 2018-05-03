@@ -27,7 +27,7 @@ test UndeclaredField1 [[
    struct A { int n, str s };
    A a = new A;
    int n = a.x;
-]] expect { "Type of `x` could not be computed for `struct A` " }
+]] expect { "No definition for field `x` in type `struct A`" }
 
 test DuplicateField1 [[
    struct A { int n, str n };

@@ -110,12 +110,12 @@ void collect(current:(Type)`<Id name>`, Collector c) {
 
 void collect(current:(Expression) `new <Id name>`, Collector c){
     c.use(name, {structId(), aliasId()});
-    c.sameType(current, name);
+    c.fact(current, name);
 }
 
 void collect(current:(Expression)`<Expression lhs> . <Id fieldName>`, Collector c) {
     c.useViaType(lhs, fieldName, {fieldId()});
-    c.sameType(current, fieldName);  
+    c.fact(current, fieldName);  
     collect(lhs, c);
 }
 

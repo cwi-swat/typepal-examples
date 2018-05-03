@@ -20,7 +20,7 @@ test UndefinedField1 [[
         int i;
         int f (int b) = j + b;
     }
-]] expect { "Undefined field, function or parameter `j`" }
+]] expect { "Undefined method, field or parameter `j`" }
 
 test UndefinedParameter [[
     module M
@@ -28,7 +28,7 @@ test UndefinedParameter [[
         int i;
         int f (int b) = i + c;
     }
-]] expect { "Undefined field, function or parameter `c`" }
+]] expect { "Undefined method, field or parameter `c`" }
 
 test WrongPlus1 [[
     module M
@@ -83,7 +83,7 @@ test UndefinedField2 [[
         A a;
         int g(int p) = a.g + p;
     }
-]] expect { "Type of field `g` could not be computed for `A` " }
+]] expect { "Unresolved type for `g`" }
 
 test WrongPlus2 [[
     module M
@@ -111,7 +111,7 @@ test WrongParameter1 [[
     }
 ]] expect { "No function can be found that accepts these parameters: `str`" }
 
-test UndefinedFunction1 [[
+test UndefinedMethod1 [[
     module M
     
     class A {
@@ -122,4 +122,4 @@ test UndefinedFunction1 [[
         A a;
         int f(str p) = a.g(p) + p;
     }
-]] expect { "Type of method `g` could not be computed for `A`, `str` " }
+]] expect { "Unresolved type for `g`" }
