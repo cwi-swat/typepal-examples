@@ -5,6 +5,7 @@ import analysis::typepal::TestFramework;
 extend analysis::typepal::TypePal;
 extend analysis::typepal::Collector;
 import ParseTree;
+import IO;
 
 extend composing_features::BasicExpressions;
 
@@ -128,11 +129,6 @@ void collect(current:(Expression)`<Id functionName> ( <{Expression ","}* params>
                
 TModel moduleTModelFromTree(Tree pt, PathConfig pcfg, bool debug){
     return collectAndSolve(pt, config = getSimpleModuleConfig(), debug=debug);
-}
-
-TModel moduleTModelFromName(str mname, PathConfig pcfg, bool debug){
-    pt = parse(#start[TestModules], |project://typepal-examples/src/composing_features/tests/<mname>.simple|).top;
-    return moduleTModelFromName(pt, pcfg, debug);
 }
 
 bool testModules(bool debug = false, PathConfig pcfg = pathConfig()) {
