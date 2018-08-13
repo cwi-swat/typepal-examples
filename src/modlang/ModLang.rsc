@@ -83,8 +83,8 @@ data AType
     | functionType(AType from, AType to)            // function type
     ;
     
-str prettyPrintAType(intType()) = "int";
-str prettyPrintAType(strType()) = "str";
+str prettyAType(intType()) = "int";
+str prettyAType(strType()) = "str";
 
 // ----  Collect facts & constraints ------------------------------------------
 

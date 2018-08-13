@@ -30,10 +30,10 @@ data AType
     | functionType(AType from, AType to)
     ; 
 
-str prettyPrintAType(boolType()) = "bool";
-str prettyPrintAType(intType()) = "int";
-str prettyPrintAType(strType()) = "str";
-str prettyPrintAType(functionType(AType from, AType to)) = "fun <prettyPrintAType(from)> -\> <prettyPrintAType(to)>";
+str prettyAType(boolType()) = "bool";
+str prettyAType(intType()) = "int";
+str prettyAType(strType()) = "str";
+str prettyAType(functionType(AType from, AType to)) = "fun <prettyAType(from)> -\> <prettyAType(to)>";
 
 //  Type
 

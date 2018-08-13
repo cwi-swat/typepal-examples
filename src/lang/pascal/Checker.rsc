@@ -78,21 +78,21 @@ bool isScalarType(scalarType(list[str] elems))          = true;
 bool isScalarType(subrangeType(AType associatedType))   = true;
 default bool isScalarType(AType t)                      = false;
 
-str prettyPrintAType(booleanType())                                     = "boolean";
-str prettyPrintAType(integerType())                                     = "integer";
-str prettyPrintAType(realType())                                        = "real";
-str prettyPrintAType(charType())                                        = "char";
-str prettyPrintAType(textType())                                        = "text";
+str prettyAType(booleanType())                                     = "boolean";
+str prettyAType(integerType())                                     = "integer";
+str prettyAType(realType())                                        = "real";
+str prettyAType(charType())                                        = "char";
+str prettyAType(textType())                                        = "text";
     
-str prettyPrintAType(scalarType(list[str] elems))                       = "(<intercalate(", ", elems)>)";
-str prettyPrintAType(subrangeType(AType associatedType))                = "subrange of <prettyPrintAType(associatedType)>";
-str prettyPrintAType(tp: arrayType(AType indexType, AType elemType))    = tp == stringType() ? "string" : (tp.packed ? "packed " : "") + "array <prettyPrintAType(indexType)> of <prettyPrintAType(elemType)>";
-str prettyPrintAType(tp: setType(AType elemType))                       = (tp.packed ? "packed " : "") + "set of <prettyPrintAType(elemType)>";
-str prettyPrintAType(tp: fileType(AType elemType))                      =  (tp.packed ? "packed " : "") + "file of <prettyPrintAType(elemType)>";
-str prettyPrintAType(pointerType(AType elemType))                       = "^" + prettyPrintAType(elemType);
-str prettyPrintAType(procedureType(AType argTypes))                     = "procedure (<prettyPrintAType(argTypes)>)";
-str prettyPrintAType(functionType(AType argTypes, AType resType))       = "function (<prettyPrintAType(argTypes)>) : <prettyPrintAType(resType)>";
-str prettyPrintAType(tp: recordType(str rname))                         =  (tp.packed ? "packed " : "") + "record " + rname;
+str prettyAType(scalarType(list[str] elems))                       = "(<intercalate(", ", elems)>)";
+str prettyAType(subrangeType(AType associatedType))                = "subrange of <prettyAType(associatedType)>";
+str prettyAType(tp: arrayType(AType indexType, AType elemType))    = tp == stringType() ? "string" : (tp.packed ? "packed " : "") + "array <prettyAType(indexType)> of <prettyAType(elemType)>";
+str prettyAType(tp: setType(AType elemType))                       = (tp.packed ? "packed " : "") + "set of <prettyAType(elemType)>";
+str prettyAType(tp: fileType(AType elemType))                      =  (tp.packed ? "packed " : "") + "file of <prettyAType(elemType)>";
+str prettyAType(pointerType(AType elemType))                       = "^" + prettyAType(elemType);
+str prettyAType(procedureType(AType argTypes))                     = "procedure (<prettyAType(argTypes)>)";
+str prettyAType(functionType(AType argTypes, AType resType))       = "function (<prettyAType(argTypes)>) : <prettyAType(resType)>";
+str prettyAType(tp: recordType(str rname))                         =  (tp.packed ? "packed " : "") + "record " + rname;
 
 // ---- isSubType
     

@@ -128,10 +128,10 @@ data AType
     | methodType(AType returnType, AType argTypes)
     ;
 
-str prettyPrintAType(useType(Use use)) = "<use.id>";
-str prettyPrintAType(methodType(AType returnType, AType argTypes)) 
-    = "method <prettyPrintAType(returnType)>(<prettyPrintAType(argTypes)>)";
-str prettyPrintAType(classType(str cname)) = cname;
+str prettyAType(useType(Use use)) = "<use.id>";
+str prettyAType(methodType(AType returnType, AType argTypes)) 
+    = "method <prettyAType(returnType)>(<prettyAType(argTypes)>)";
+str prettyAType(classType(str cname)) = cname;
 
 // ---- Configuration ---------------------------------------------------------
 

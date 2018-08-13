@@ -65,9 +65,9 @@ data IdRole
     | classId()
     ;
 
-str prettyPrintAType(intType()) = "int";
-str prettyPrintAType(strType()) = "str";
-str prettyPrintAType(classType(str name)) = name;
+str prettyAType(intType()) = "int";
+str prettyAType(strType()) = "str";
+str prettyAType(classType(str name)) = name;
 
 
 tuple[list[str] typeNames, set[IdRole] idRoles] smallGetTypeNamesAndRole(classType(str name)){

@@ -71,8 +71,8 @@ syntax Expression
 
 data AType = intType() | strType(); 
 
-str prettyPrintAType(intType()) = "int";
-str prettyPrintAType(strType()) = "str";
+str prettyAType(intType()) = "int";
+str prettyAType(strType()) = "str";
 
 // ----  Collect definitions, uses and requirements -----------------------
 
@@ -157,10 +157,10 @@ TModel picoTModelFromTree(Tree pt, bool debug = false) {
     return collectAndSolve(pt, debug=debug);
 }
 
-bool picoTest(bool debug = false) {
+bool picoTests(bool debug = false) {
     return runTests([|project://typepal-examples/src/lang/pico/pico.ttl|], #start[Program], TModel (Tree t) {
         return picoTModelFromTree(t, debug=debug);
     });
 }
 
-value main(){ return picoTest(); }
+value main(){ return picoTests(); }

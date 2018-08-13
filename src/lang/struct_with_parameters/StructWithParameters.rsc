@@ -65,11 +65,11 @@ data IdRole
     | typeFormalId()
     ;
 
-str prettyPrintAType(intType()) = "int";
-str prettyPrintAType(strType()) = "str";
-str prettyPrintAType(typeFormal(name)) = "<name>";
-str prettyPrintAType(structDef(name, formals)) = isEmpty(formals) ? "<name>" : "<name>[<intercalate(",", formals)>]";
-str prettyPrintAType(structType(name, actuals)) = isEmpty(actuals) ? "<name>" : "<name>[<intercalate(",", [prettyPrintAType(a) | a <- actuals])>]";
+str prettyAType(intType()) = "int";
+str prettyAType(strType()) = "str";
+str prettyAType(typeFormal(name)) = "<name>";
+str prettyAType(structDef(name, formals)) = isEmpty(formals) ? "<name>" : "<name>[<intercalate(",", formals)>]";
+str prettyAType(structType(name, actuals)) = isEmpty(actuals) ? "<name>" : "<name>[<intercalate(",", [prettyAType(a) | a <- actuals])>]";
 
 AType instantiateTypeParametersStructWithParameters(Tree selector, structDef(str name1, list[str] formals), structType(str name2, list[AType] actuals), AType t, Solver s){
     if(size(formals) != size(actuals)) throw checkFailed({});

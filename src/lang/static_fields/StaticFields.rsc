@@ -42,9 +42,9 @@ data IdRole
     | structId()
     ;
 
-str prettyPrintAType(intType()) = "int";
-str prettyPrintAType(strType()) = "str";
-str prettyPrintAType(structType(name)) = "struct <name>";
+str prettyAType(intType()) = "int";
+str prettyAType(strType()) = "str";
+str prettyAType(structType(name)) = "struct <name>";
 
 
 tuple[list[str] typeNames, set[IdRole] idRoles] staticFieldsGetTypeNamesAndRole(structType(str name)){

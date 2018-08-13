@@ -46,9 +46,9 @@ data IdRole
     | aliasId()
     ;
  
-str prettyPrintAType(intType()) = "int";
-str prettyPrintAType(strType()) = "str";
-str prettyPrintAType(structType(name)) = "struct <name>";
+str prettyAType(intType()) = "int";
+str prettyAType(strType()) = "str";
+str prettyAType(structType(name)) = "struct <name>";
 
 tuple[list[str] typeNames, set[IdRole] idRoles] aliasesGetTypeNamesAndRole(structType(str name)){
     return <[name], {structId()}>;

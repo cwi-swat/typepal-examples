@@ -10,7 +10,7 @@ extend lang::fun::FunChecker;
 data AType
     = moduleType(str name)
     ;
-str prettyPrintAType(moduleType(str name)) = "module(<name>)";
+str prettyAType(moduleType(str name)) = "module(<name>)";
     
 data IdRole
     = moduleId()
