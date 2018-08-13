@@ -1,0 +1,12 @@
+class Zero extends Object {
+    Zero(){
+        super();
+    }
+}
+
+class Succ extends Zero {
+    Succ n;
+    Succ(Succ n){
+        super(); this.n = n;
+    }
+}
