@@ -83,7 +83,7 @@ test UndefinedField2 [[
         A a;
         int g(int p) = a.g + p;
     }
-]] expect { "Unresolved type for `g`" }
+]] expect { "No definition found for field `g` in type `A`" }
 
 test WrongPlus2 [[
     module M
@@ -122,4 +122,4 @@ test UndefinedMethod1 [[
         A a;
         int f(str p) = a.g(p) + p;
     }
-]] expect { "Unresolved type for `g`" }
+]] expect { "No definition found for method `g` in type `A`" }

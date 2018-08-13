@@ -1,6 +1,7 @@
-module smallOO::SmallOO
+module lang::smallOO::SmallOO
  
 extend analysis::typepal::TypePal;
+extend analysis::typepal::TestFramework;
 
 import util::Reflective;
 import ParseTree;
@@ -69,16 +70,16 @@ str prettyPrintAType(strType()) = "str";
 str prettyPrintAType(classType(str name)) = name;
 
 
-tuple[bool isNamedType, str typeName, set[IdRole] idRoles] getTypeNameAndRoleSmall(classType(str name)){
-    return <true, name, {classId()}>;
+tuple[list[str] typeNames, set[IdRole] idRoles] smallGetTypeNamesAndRole(classType(str name)){
+    return <[name], {classId()}>;
 }
 
-default tuple[bool isNamedType, str typeName, set[IdRole] idRoles] getTypeNameAndRoleSmall(AType t){
-    return <false, "", {}>;
+default tuple[list[str] typeNames, set[IdRole] idRoles] smallGetTypeNamesAndRole(AType t){
+    return <[], {}>;
 }
 
 TypePalConfig smallConfig() =
-    tconfig(getTypeNameAndRole = getTypeNameAndRoleSmall);
+    tconfig(getTypeNamesAndRole = smallGetTypeNamesAndRole);
 
 // ---- collect ---------------------------------------------------------------
 
@@ -199,7 +200,7 @@ TModel smallOOTModelFromTree(Tree pt, bool debug){
 }
 
 TModel smallOOTModelFromName(str mname, bool debug){
-    pt = parse(#start[Module], |project://typepal-examples/src/smallOO/<mname>.small|).top;
+    pt = parse(#start[Module], |project://typepal-examples/src/lang/smallOO/<mname>.small|).top;
     return smallOOTModelFromTree(pt, debug);
 }
 
@@ -207,8 +208,10 @@ list[Message] checkSmallOO(str mname, bool debug=false) {
     return smallOOTModelFromName(mname, debug).messages;
 }
 
-bool testSmallOO(bool debug = false) {
-    return runTests([|project://typepal-examples/src/smallOO/modules.ttl|], #start[Module], TModel (Tree t) {
+bool smallOOTests(bool debug = false) {
+    return runTests([|project://typepal-examples/src/lang/smallOO/smallOO-tests.ttl|], #start[Module], TModel (Tree t) {
         return smallOOTModelFromTree(t, debug);
     });
 }
+
+value main() = smallOOTests();
