@@ -1,3 +1,6 @@
+{ program 7.1
+  operations on complex numbers }
+
 program complex(output);
 const fac = 4;
 type complex = record re, im : integer end;

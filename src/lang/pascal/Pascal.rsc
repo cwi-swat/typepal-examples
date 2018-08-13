@@ -10,9 +10,9 @@ Redistribution and use in source and binary forms, with or without modification,
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 }
-module pascal::Pascal
+module lang::pascal::Pascal
 
-// Pascal (Pascal User Manual, Second Edition, 1978
+// Pascal (Pascal User Manual, Second Edition, 1978)
 
 layout Layout = WhitespaceAndComment* !>> [\ \t\n\r%];
 
@@ -20,10 +20,12 @@ lexical WhitespaceAndComment
    = [\ \t\n\r]
    | @category="Comment" ws2:
     "%" ![%]+ "%"
-   | @category="Comment" ws3: "{" ![\n}]*  "}"$
+   | @category="Comment" ws3: "{" ![}]*  "}"$
    ;
 
-syntax Program =
+// program
+
+start syntax Program =
    ProgramHeading programHeading Block block "."; 
 
 syntax ProgramHeading =  
@@ -32,6 +34,7 @@ syntax ProgramHeading =
 syntax FileIdentifier
     = Identifier
     ;
+
     
 lexical Identifier
     = ([A-Za-z] [A-Za-z0-9]* !>> [A-Za-z0-9]) \ Reserved
@@ -83,8 +86,8 @@ lexical UnsignedInteger
     
 lexical UnsignedReal
     = UnsignedInteger "." UnsignedInteger
-    | UnsignedInteger "." UnsignedInteger "E" ScaleFactor
-    | UnsignedInteger "E" ScaleFactor
+    | UnsignedInteger "." UnsignedInteger "e" ScaleFactor
+    | UnsignedInteger "e" ScaleFactor
     ;
 lexical ScaleFactor
     = UnsignedInteger
@@ -102,6 +105,7 @@ lexical String
 
 lexical Character
     = ![\']
+    | "\'\'"
     ;
 syntax TypeDefinitionPart
     = "type"  {TypeDefinition ";"}+ ";"
@@ -289,8 +293,7 @@ syntax ComponentVariable
     ;
 
 syntax IndexedVariable
-    = //ArrayVariable
-      ArrayVariable "[" { Expression ","}+ "]"
+    = ArrayVariable "[" { Expression ","}+ "]"
     ;
 
 syntax ArrayVariable
@@ -322,10 +325,11 @@ syntax PointerVariable
     ;
     
 syntax Expression
-    = Variable
+    = 
+     FunctionDesignator
+    >  Variable
     | UnsignedConstant
-    | "(" Expression ")"
-    | FunctionDesignator
+    | "(" Expression ")"  
     | Set
    
     > left ( Expression "*" Expression
@@ -358,7 +362,7 @@ syntax UnsignedConstant
     ;
 
 syntax FunctionDesignator
-    = //FunctionIdentifier
+    = //FunctionIdentifier |
       FunctionIdentifier "(" { ActualParameter ","}+ ")"
     ;
     
@@ -367,7 +371,7 @@ syntax FunctionIdentifier
     ;
 
 syntax Set
-    = "{" { Element ","}* "}"
+    = "[" { Element ","}* "]"
     ;
 
 syntax Element

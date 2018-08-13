@@ -1,3 +1,6 @@
+{ program 4.8
+  exponentiation with natural exponent }
+
 program exponentiation(input,output);
 
 var e, y : integer; u,x,z : real;

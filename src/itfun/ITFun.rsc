@@ -14,6 +14,7 @@ module itfun::ITFun
 // Functional language with inferred types (MiniML-like)
 
 extend analysis::typepal::TypePal;
+extend analysis::typepal::TestFramework;
 
 import IO;
 import ParseTree;

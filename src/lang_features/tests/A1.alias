@@ -1,4 +1,0 @@
- alias INT1 = INT2;
- alias INT2 = INT1;
- 
- INT1 x = 123;

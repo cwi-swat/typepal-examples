@@ -10,7 +10,7 @@ Redistribution and use in source and binary forms, with or without modification,
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 }
-module pico::Pico
+module lang::pico::Pico
   
 // Pico, a trivial, classic, language:
 // - single scope, no functions
@@ -20,6 +20,7 @@ module pico::Pico
 import Prelude;
 
 extend analysis::typepal::TypePal;
+extend analysis::typepal::TestFramework;
 
 // ----  Pico syntax -------------------------------------
 
@@ -68,10 +69,7 @@ syntax Expression
 
 // ----  IdRoles, PathLabels and AType ------------------- 
 
-data AType = intType() | strType();  
-
-AType transType((Type) `natural`) = intType();
-AType transType((Type) `string`) = strType(); 
+data AType = intType() | strType(); 
 
 str prettyPrintAType(intType()) = "int";
 str prettyPrintAType(strType()) = "str";
@@ -83,9 +81,22 @@ void collect(current: (Program) `begin <Declarations decls> <{Statement  ";"}* b
         collect(decls, body, c);
     c.leaveScope(current);
 }
+
+void collect(current: (Declarations) `declare <{Declaration ","}* decls> ;`, Collector c){
+    collect(decls, c);
+}  
+
+void collect(current:(Type) `natural`, Collector c){
+    c.fact(current, intType());
+}
+
+void collect(current:(Type) `string`, Collector c){
+    c.fact(current, strType());
+}
  
 void collect(current:(Declaration) `<Id id> : <Type tp>`,  Collector c) {
-     c.define("<id>", variableId(), id, defType(transType(tp)));
+     c.define("<id>", variableId(), id, defType(tp));
+     collect(tp, c);
 }
 
 void collect(current: (Expression) `<Id name>`, Collector c){
@@ -146,9 +157,10 @@ TModel picoTModelFromTree(Tree pt, bool debug = false) {
     return collectAndSolve(pt, debug=debug);
 }
 
- 
-bool testPico(bool debug = false) {
-    return runTests([|project://typepal-examples/src/pico/pico.ttl|], #start[Program], TModel (Tree t) {
+bool picoTest(bool debug = false) {
+    return runTests([|project://typepal-examples/src/lang/pico/pico.ttl|], #start[Program], TModel (Tree t) {
         return picoTModelFromTree(t, debug=debug);
     });
 }
+
+value main(){ return picoTest(); }
