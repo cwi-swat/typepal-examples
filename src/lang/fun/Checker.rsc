@@ -10,16 +10,14 @@ Redistribution and use in source and binary forms, with or without modification,
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 }
-module lang::fun::FunChecker
+module lang::fun::Checker
  
 // Functional language with declared types
  
-import lang::fun::FunSyntax;
+import lang::fun::Syntax;
  
 extend analysis::typepal::TypePal;
-extend analysis::typepal::TestFramework;
 
-import ParseTree;
 
 // ----  IdRoles, PathLabels and AType ---------------------------------------- 
 
@@ -156,33 +154,3 @@ void collect(current: (Expression) `<String strcon>`, Collector c){
      c.fact(current, strType());
 }
 
-// ----  Testing --------------------------------------------------------------
-
-private Fun funSample(str name) = parse(#Fun, |project://typepal-examples/src/lang/fun/<name>.dt|);
-
-TModel funTModel(str name){
-   return funTModelFromTree(funSample(name));
-}
-
-TModel funTModelFromTree(Tree pt, bool debug = false){
-    return collectAndSolve(pt, debug=debug);
-}
-
-TModel funTModelFromStr(str text){
-    pt = parse(#start[Fun], text).top;
-    return funTModelFromTree(pt);
-}
-
-list[Message] funCheck(str name) {
-    tm = funTModel(name);
-    return tm.messages;
-}
-
-void funTest() {
-     runTests([|project://typepal-examples/src/lang/fun/tests.ttl|], #Fun, funTModelFromTree);
-}
-
-value main(){
-    funTest();
-    return true;
-}

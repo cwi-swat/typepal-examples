@@ -1,53 +1,8 @@
-module lang::struct_with_parameters::StructWithParameters
+module lang::struct_with_parameters::Checker
 
+import lang::struct_with_parameters::Syntax;
+ 
 extend analysis::typepal::TypePal;
-extend analysis::typepal::TestFramework;
-extend lang::CommonLex;
-
-import ParseTree;
-import List;
-import Set;
-
-// ---- Programs with struct declarations and uses ----------------------------
-
-start syntax Program = Declaration*;
-
-syntax Type = "int" | "str" | Id TypeActuals;
-    
-syntax TypeActuals
-    = noActuals: ()
-    | withTypeActuals: "[" {Type ","}+ actuals "]"
-    ;
-    
-syntax TypeHeader
-    = Id TypeFormals
-    ;
-
-syntax TypeFormals
-    = noTypeFormals: ()
-    | withTypeFormals: "[" {TypeFormal ","}+ formals"]"
-    ;
-    
-syntax TypeFormal
-    = Id
-    ;
-    
-syntax Declaration
-    = Type typ Id id "=" Expression exp ";"
-    | "struct" TypeHeader "{" {Field ","}* fields "}" ";"
-    ;
-    
-syntax Field = Type typ Id name ;
-
-syntax Expression 
-    = Integer i
-    | String s
-    | Id use
-    | Expression lhs "." Id fieldName
-    | "new" Id name TypeActuals
-    ;
-    
-keyword Keywords = "int" | "str" | "struct" | "new";
 
 // ---- Extend Typepal's ATypes, IdRoles and PathRoles ------------------------
 
@@ -182,22 +137,3 @@ void collect(current:(Expression)`<String _>`, Collector c) {
 void collect(current:(Expression)`<Id use>`, Collector c) {
     c.use(use, {variableId()});
 }
-
-// ---- Testing ---------------------------------------------------------------
-
-TModel structWithParametersTModelFromTree(Tree pt, bool debug){
-    return collectAndSolve(pt, config = structWithParametersConfig(), debug=debug);
-}
-
-TModel structWithParametersTModelFromName(str mname, bool debug){
-    pt = parse(#start[Program], |project://typepal-examples/src/lang/struct_with_parameters/<mname>.struct|).top;
-    return structWithParametersTModelFromTree(pt, debug);
-}
-
-bool structWithParametersTests(bool debug = false) {
-    return runTests([|project://typepal-examples/src/lang/struct_with_parameters/struct_with_parameters.ttl|], #start[Program], TModel (Tree t) {
-        return structWithParametersTModelFromTree(t, debug);
-    });
-}
-
-value main(){ structWithParametersTests(); return true; }

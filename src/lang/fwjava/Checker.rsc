@@ -1,113 +1,8 @@
-@license{
-Copyright (c) 2017, Paul Klint
-All rights reserved.
+module lang::fwjava::Checker
 
-Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-}
-module lang::fwjava::FWJava
-
-// FeatherWeightJava
-
+import lang::fwjava::Syntax;
 extend analysis::typepal::TypePal;
-extend analysis::typepal::TestFramework;
-
-import ParseTree;
 import String;
-
-// ----  syntax ---------------------------------------------------------------
-
-lexical ClassId  = ([A-Z][A-Zåa-z0-9]* !>> [a-z0-9]) \ Reserved;
-lexical Id       = ([a-z][a-z0-9]* !>> [a-z0-9]) \ Reserved;
-
-keyword Reserved = "class" | "extends" | "this" | "return";
-
-layout Layout = WhitespaceAndComment* !>> [\ \t\n\r%];
-
-lexical WhitespaceAndComment 
-   = [\ \t\n\r]
-   | @category="Comment" ws2: "%" ![%]+ "%"
-   ;
-   
-start syntax FWJProgram
-    = ClassDecl* classdecls
-    ;
-    
-syntax ClassDecl
-    = "class" ClassId cid "extends" ClassId ecid "{" 
-              FieldDecl* fielddecls
-              ConstructorDecl constructordecl
-              MethodDecl* methoddecls
-        "}"
-     ;
-
-syntax FieldDecl
-    = ClassId cid Id id ";"
-    ;
-
-syntax ConstructorDecl
-    =  ClassId cid Formals formals "{"
-            SuperCall supercall
-            FieldAssignment* fieldAssignments
-       "}"
-    ;
-
-syntax SuperCall
-    = "super" super "(" {Variable ","}* vars ")" ";"
-    ;
-    
-syntax Formal
-    =  ClassId cid Id id
-    ;
-    
-syntax Formals
-    = "(" {Formal ","}* formals ")"
-    ;
-          
-syntax MethodDecl
-    = ClassId cid Id mid Formals formals "{" "return" Expression exp ";" "}"
-    ;
-    
-syntax Expression
-    = Variable var
-    | Expression exp "." Field field
-    | Expression exp "." Method method Expressions exps
-    | "new" Constructor constructor Expressions exps
-    | "(" Class class ")" Expression exp
-    | "this"
-    ;
-
-syntax Constructor
-    = ClassId id
-    ;
-syntax Class
-    = ClassId id
-    ;
-    
-syntax Variable
-    = Id id
-    ;
- 
-syntax Field
-    = Id id
-    ;
-
-syntax Method
-    = Id id
-    ;
-           
-syntax Expressions
-    = "(" {Expression ","}* expressions ")"
-    ;   
-
-syntax FieldAssignment
-    = "this" "." Field field "=" Expression exp ";"
-    ;   
     
 // ----  IdRoles, PathLabels and AType ---------------------------------------- 
 
@@ -147,17 +42,17 @@ data ScopeRole
 // getTypeNamesAndRole is needed for field selection on class instances (by way of useViaType):
 // only a classType defines a type from which fields can be selected, return its name and role
 
-tuple[list[str] typeNames, set[IdRole] idRoles] FWJgetTypeNamesAndRole(classType(str name)){
+tuple[list[str] typeNames, set[IdRole] idRoles] fwjGetTypeNamesAndRole(classType(str name)){
     return <[name], {classId()}>;
 }
 
-default tuple[list[str] typeNames, set[IdRole] idRoles] FWJgetTypeNamesAndRole(AType t){
+default tuple[list[str] typeNames, set[IdRole] idRoles] fwjGetTypeNamesAndRole(AType t){
     return <[], {}>;
 }
 
 // The only overloading that is allowed is between a class names and constructor names
 
-bool FWJmayOverload (set[loc] defs, map[loc, Define] defines) {
+bool fwjMayOverload (set[loc] defs, map[loc, Define] defines) {
     roles = {defines[def].idRole | def <- defs};
     res =  size(roles) == 1 || roles == {classId(), constructorId()};
     return res;
@@ -165,7 +60,7 @@ bool FWJmayOverload (set[loc] defs, map[loc, Define] defines) {
 
 // Set up the definition of the class and constructor for "Object"
 
- void FWJpreCollectInitialization(Tree pt, Collector c){
+ void fwjPreCollectInitialization(Tree pt, Collector c){
     
     object_src = [ClassId] "Object";
     c.defineInScope(|global-scope:///|, "Object", classId(), object_src, defType(classType("Object")));
@@ -177,7 +72,7 @@ bool FWJmayOverload (set[loc] defs, map[loc, Define] defines) {
 
 // Once all extendd are known, we can define the subtype relation
 
-TModel FWJpreSolver(map[str,Tree] namedTrees, TModel tm) {
+TModel fwjPreSolver(map[str,Tree] namedTrees, TModel tm) {
     if(lrel[str,str] extendsRel := tm.store[key_extendsRelation]){
         extends = toSet(extendsRel)*;
     
@@ -193,10 +88,10 @@ TModel FWJpreSolver(map[str,Tree] namedTrees, TModel tm) {
 
 // Configure TypePal, after the above preparations
 
-TypePalConfig FWJConfig() =
-    tconfig(mayOverload         = FWJmayOverload,
-            getTypeNamesAndRole = FWJgetTypeNamesAndRole,
-            preSolver           = FWJpreSolver);
+TypePalConfig fwjConfig() =
+    tconfig(mayOverload         = fwjMayOverload,
+            getTypeNamesAndRole = fwjGetTypeNamesAndRole,
+            preSolver           = fwjPreSolver);
  
 
 // ----  Collect --------------------------------------------------------------
@@ -364,27 +259,3 @@ void collect(current: (FieldAssignment) `this . <Field field> = <Expression exp>
 void collect(current: (Expressions) `( <{Expression ","}* expressions> )`, Collector c){
     collect(expressions, c);
 }
-
-// ----  Examples & Tests --------------------------------
-
-TModel FWJTModelFromTree(Tree pt, bool debug){
-    if(pt has top) pt = pt.top;
-    
-    c = newCollector("FWJ checker", pt, config=FWJConfig(), debug=debug);
-    FWJpreCollectInitialization(pt, c);
-    collect(pt, c);
-    return newSolver(pt, c.run()).run();
-}
-
-TModel FWJTModelFromName(str mname, bool debug){
-    pt = parse(#start[FWJProgram], |project://typepal-examples/src/lang/fwjava/<mname>.fwj|).top;
-    return FWJTModelFromTree(pt, debug);
-}
-
-bool testFWJ(bool debug = false) {
-    return runTests([|project://typepal-examples/src/lang/fwjava/tests.ttl|], #start[FWJProgram], TModel (Tree t) {
-        return FWJTModelFromTree(t, debug);
-    });
-}
-
-value main() { testFWJ(); return true; }

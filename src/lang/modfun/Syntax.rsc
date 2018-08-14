@@ -1,8 +1,8 @@
-module lang::modfun::ModFunSyntax
+module lang::modfun::Syntax
 
 // Modular Functional language with declared types (an extension of Fun)
 
-extend lang::fun::FunSyntax;
+extend lang::fun::Syntax;
 
 lexical ModId   = ([A-Z][a-z0-9]* !>> [a-z0-9]) \ Reserved;
 

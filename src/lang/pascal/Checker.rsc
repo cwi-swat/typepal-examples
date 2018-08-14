@@ -998,4 +998,5 @@ bool pascalTests(bool debug = false) {
     return ok;
 }
 
-value main() { pascalTests(); return true; }
+value main() 
+    = pascalTests();

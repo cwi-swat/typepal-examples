@@ -1,54 +1,9 @@
-module lang::smallOO::SmallOO
+module lang::smallOO::Checker
+
+import lang::smallOO::Syntax;
  
 extend analysis::typepal::TypePal;
-extend analysis::typepal::TestFramework;
 
-import util::Reflective;
-import ParseTree;
-
-// ---- SmallOO syntax --------------------------------------------------------
-
-extend lang::std::Layout;
-
-start syntax Module = "module" Identifier moduleName Import* imports Declaration* declarations; 
-
-syntax Import = "import" Identifier moduleName;
-
-syntax Declaration 
-    = "class" Identifier className "{" Declaration* declarations "}"
-    | Type returnType Identifier functionName "(" {Parameter ","}* parameters ")" "=" Expression returnExpression ";"
-    | Type fieldType Identifier fieldName ";"
-    ;
-
-syntax Parameter = Type tp Identifier name; 
-
-syntax Expression
-    = Identifier id
-    | Expression "." Identifier id
-    | Literal l
-    | Identifier functionName "(" {Expression ","}* parameters ")"
-    | Expression "." Identifier functionName "(" {Expression ","}* parameters ")"
-    | Expression "+" Expression
-    ;
-    
-lexical Identifier = ([a-z A-Z _][a-z A-Z _ 0-9]* !>> [a-z A-Z _ 0-9]) \ Keywords;
-    
-lexical Literal
-    = Integer
-    | String
-    ;
-    
-lexical Integer = [0-9]+ !>> [0-9];
-lexical String = [\"] ![\"]* [\"];
-    
-lexical Type
-    = "int"
-    | "str"
-    | Identifier className
-    ;
-
-keyword Keywords = "module" | "class" | "import" | "int" | "str";
- 
 // ---- Extend Typepal's ATypes, IdRoles and PathRoles -----------------------
  
 data AType
@@ -192,26 +147,3 @@ void collect(current:(Expression)`<Expression lhs> + <Expression rhs>`, Collecto
     });
     collect(lhs, rhs, c);
 }
-
-// ---- Testing ---------------------------------------------------------------
-               
-TModel smallOOTModelFromTree(Tree pt, bool debug){
-    return collectAndSolve(pt, config=smallConfig(), debug=debug);
-}
-
-TModel smallOOTModelFromName(str mname, bool debug){
-    pt = parse(#start[Module], |project://typepal-examples/src/lang/smallOO/<mname>.small|).top;
-    return smallOOTModelFromTree(pt, debug);
-}
-
-list[Message] checkSmallOO(str mname, bool debug=false) {
-    return smallOOTModelFromName(mname, debug).messages;
-}
-
-bool smallOOTests(bool debug = false) {
-    return runTests([|project://typepal-examples/src/lang/smallOO/smallOO-tests.ttl|], #start[Module], TModel (Tree t) {
-        return smallOOTModelFromTree(t, debug);
-    });
-}
-
-value main() = smallOOTests();
