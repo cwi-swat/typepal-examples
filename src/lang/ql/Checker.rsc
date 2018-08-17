@@ -3,11 +3,11 @@ module lang::ql::Checker
 import lang::ql::Syntax;
 extend analysis::typepal::TypePal;
 
-// ----  IdRoles, PathLabels and AType ------------------- 
+// ----  AType and IdRole ----------------------------------------------------- 
 
 data AType
     = formType(str name) 
-    | labelType(str name) 
+    | labelType() 
     | booleanType() 
     | integerType() 
     | stringType() 
@@ -15,7 +15,7 @@ data AType
     ;
 
 str prettyAType(formType(str name))     = "form <name>";
-str prettyAType(labelType(str name))    = "label <name>";
+str prettyAType(labelType())            = "label";
 str prettyAType(booleanType())          = "boolean";
 str prettyAType(integerType())          = "integer";
 str prettyAType(stringType())           = "string";
@@ -38,7 +38,7 @@ void collect(current: (Form) `form <Id name> { <Question* questions> }`, Collect
 // ---- Question --------------------------------------------------------------
 
 void collect(current: (Question) `<Label label> <Var var> : <Type t> <Value? v>`, Collector c){
-    c.define("<label>", labelId(), label, defType(labelType("<label>")));
+    c.define("<label>", labelId(), label, defType(labelType()));
     c.define("<var>", variableId(), var, defType(t));
     for((Value) `[<Const const>]` <- v){
         c.requireEqual(const, t, error(const, "Incompatible expression type %t, expected %t", const, t));
@@ -47,7 +47,7 @@ void collect(current: (Question) `<Label label> <Var var> : <Type t> <Value? v>`
 }
 
 void collect(current: (Question) `<Label label> <Var var> : <Type t> = <Expr e> <Value? v>`, Collector c){
-    c.define("<label>", labelId(), label, defType(labelType("<label>")));
+    c.define("<label>", labelId(), label, defType(labelType()));
     c.define("<var>", variableId(), var, defType(t));
     c.requireEqual(e, t, error(e, "Incompatible expression type %t, expected %t", e, t));
     for((Value) `[<Const const>]` <-  v){
