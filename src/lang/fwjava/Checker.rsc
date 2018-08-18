@@ -54,8 +54,7 @@ default tuple[list[str] typeNames, set[IdRole] idRoles] fwjGetTypeNamesAndRole(A
 
 bool fwjMayOverload (set[loc] defs, map[loc, Define] defines) {
     roles = {defines[def].idRole | def <- defs};
-    res =  size(roles) == 1 || roles == {classId(), constructorId()};
-    return res;
+    return roles == {classId(), constructorId()};
 }
 
 // Set up the definition of the class and constructor for "Object"

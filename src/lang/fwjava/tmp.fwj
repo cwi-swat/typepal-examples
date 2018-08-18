@@ -4,9 +4,8 @@ class Zero extends Object {
     }
 }
 
-class Succ extends Zero {
-    Succ n;
-    Succ(Succ n){
-        super(); this.n = n;
+class Zero extends Object {
+    Zero(){
+        super();
     }
 }
