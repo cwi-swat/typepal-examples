@@ -7,7 +7,7 @@ import ParseTree;
 
 // ----  Testing --------------------------------------------------------------
 
-private ModFun modfunSample(str name) = parse(#ModFun, |project://typepal-examples/src/lang/modfun/<name>.modfun|);
+private ModFun modfunSample(str name) = parse(#ModFun, |project://typepal-examples/src/lang/modfun/<name>.mfun|);
 
 TModel modfunTModel(str name){
    return modfunTModelFromTree(modfunSample(name), debug=true);

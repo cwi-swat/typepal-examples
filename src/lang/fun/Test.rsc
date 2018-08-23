@@ -7,7 +7,7 @@ import ParseTree;
 
 // ----  Testing --------------------------------------------------------------
 
-private Fun funSample(str name) = parse(#Fun, |project://typepal-examples/src/lang/fun/<name>.dt|);
+private Fun funSample(str name) = parse(#Fun, |project://typepal-examples/src/lang/fun/<name>.fun|);
 
 TModel funTModel(str name){
    return funTModelFromTree(funSample(name));
