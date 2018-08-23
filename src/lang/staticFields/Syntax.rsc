@@ -1,4 +1,4 @@
-module lang::static_fields::Syntax
+module lang::staticFields::Syntax
 
 // ---- Programs with struct declarations and uses ----------------------------
 

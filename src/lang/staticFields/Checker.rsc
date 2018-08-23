@@ -1,6 +1,6 @@
-module lang::static_fields::Checker
+module lang::staticFields::Checker
 
-import lang::static_fields::Syntax;
+import lang::staticFields::Syntax;
  
 extend analysis::typepal::TypePal;
 

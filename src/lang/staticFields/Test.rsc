@@ -1,6 +1,6 @@
-module lang::static_fields::Test
+module lang::staticFields::Test
 
-extend lang::static_fields::Checker;
+extend lang::staticFields::Checker;
 extend analysis::typepal::TestFramework;
 
 import ParseTree;
@@ -12,12 +12,12 @@ TModel staticFieldsTModelFromTree(Tree pt, bool debug){
 }
 
 TModel staticFieldsTModelFromName(str mname, bool debug){
-    pt = parse(#start[Program], |project://typepal-examples/src/lang/static_fields/<mname>.struct|).top;
+    pt = parse(#start[Program], |project://typepal-examples/src/lang/staticFields/<mname>.struct|).top;
     return staticFieldsTModelFromTree(pt, debug);
 }
 
 bool staticFieldsTests(bool debug = false) {
-    return runTests([|project://typepal-examples/src/lang/static_fields/tests.ttl|], #start[Program], TModel (Tree t) {
+    return runTests([|project://typepal-examples/src/lang/staticFields/tests.ttl|], #start[Program], TModel (Tree t) {
         return staticFieldsTModelFromTree(t, debug);
     });
 }
