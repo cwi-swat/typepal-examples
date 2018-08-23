@@ -1,4 +1,4 @@
-module lang::struct_with_parameters::Syntax
+module lang::structParameters::Syntax
 
 // ---- Programs with struct declarations and uses ----------------------------
 

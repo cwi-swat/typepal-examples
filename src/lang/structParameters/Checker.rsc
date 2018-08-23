@@ -1,6 +1,6 @@
-module lang::struct_with_parameters::Checker
+module lang::structParameters::Checker
 
-import lang::struct_with_parameters::Syntax;
+import lang::structParameters::Syntax;
  
 extend analysis::typepal::TypePal;
 
