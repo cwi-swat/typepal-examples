@@ -12,14 +12,15 @@ TModel picoTModelFromName(str name, bool debug = false) {
     return collectAndSolve(pt, debug=debug);
 }
 
-TModel picoTModelFromTree(Tree pt, bool debug = false) {
+TModel picoTModelForTree(Tree pt, bool debug = false) {
     return collectAndSolve(pt, debug=debug);
 }
 
 bool picoTests(bool debug = false) {
-    return runTests([|project://typepal-examples/src/lang/pico/tests.ttl|], #start[Program], TModel (Tree t) {
-        return picoTModelFromTree(t, debug=debug);
-    });
+    return runTests([|project://typepal-examples/src/lang/pico/tests.ttl|], 
+                    #start[Program], 
+                    TModel (Tree t) { return picoTModelForTree(t, debug=debug); },
+                    runName = "Pico");
 }
 
 value main()

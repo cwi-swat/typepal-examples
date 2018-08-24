@@ -6,17 +6,20 @@ import ParseTree;                           // In order to parse tests
 
 // ---- Testing ---------------------------------------------------------------
 
-TModel calcTModelFromTree(Tree pt){
+TModel calcTModelForTree(Tree pt){
     return collectAndSolve(pt);
 }
 
 TModel calcTModelFromStr(str text){
     pt = parse(#start[Calc], text).top;
-    return calcTModelFromTree(pt);
+    return calcTModelForTree(pt);
 }
 
 bool calcTests() {
-     return runTests([|project://typepal-examples/src/lang/calc/tests.ttl|], #Calc, calcTModelFromTree);
+     return runTests([|project://typepal-examples/src/lang/calc/tests.ttl|], 
+                     #Calc, 
+                     calcTModelForTree, 
+                     runName="Calc");
 }
 
 bool main() = calcTests();

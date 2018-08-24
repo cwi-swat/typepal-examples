@@ -7,7 +7,7 @@ import ParseTree;
 
 // ----  Examples & Tests --------------------------------
 
-TModel fwjTModelFromTree(Tree pt, bool debug){
+TModel fwjTModelForTree(Tree pt, bool debug){
     if(pt has top) pt = pt.top;
     
     c = newCollector("FWJ checker", pt, config=fwjConfig(), debug=debug);
@@ -18,13 +18,14 @@ TModel fwjTModelFromTree(Tree pt, bool debug){
 
 TModel fwjTModelFromName(str mname, bool debug){
     pt = parse(#start[FWJProgram], |project://typepal-examples/src/lang/fwjava/<mname>.fwj|).top;
-    return fwjTModelFromTree(pt, debug);
+    return fwjTModelForTree(pt, debug);
 }
 
 bool fwjTests(bool debug = false) {
-    return runTests([|project://typepal-examples/src/lang/fwjava/tests.ttl|], #start[FWJProgram], TModel (Tree t) {
-        return fwjTModelFromTree(t, debug);
-    });
+    return runTests([|project://typepal-examples/src/lang/fwjava/tests.ttl|], 
+                     #start[FWJProgram], 
+                     TModel (Tree t) { return fwjTModelForTree(t, debug); },
+                     runName = "FwJava");
 }
 
 value main() = fwjTests();

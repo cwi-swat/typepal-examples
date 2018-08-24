@@ -7,19 +7,20 @@ import ParseTree;
 
 // ---- Testing ---------------------------------------------------------------
 
-TModel structParametersTModelFromTree(Tree pt, bool debug){
+TModel structParametersTModelForTree(Tree pt, bool debug){
     return collectAndSolve(pt, config = structParametersConfig(), debug=debug);
 }
 
 TModel structParametersTModelFromName(str mname, bool debug){
     pt = parse(#start[Program], |project://typepal-examples/src/lang/structParameters/<mname>.struct|).top;
-    return structParametersTModelFromTree(pt, debug);
+    return structParametersTModelForTree(pt, debug);
 }
 
 bool structParametersTests(bool debug = false) {
-    return runTests([|project://typepal-examples/src/lang/structParameters/tests.ttl|], #start[Program], TModel (Tree t) {
-        return structParametersTModelFromTree(t, debug);
-    });
+    return runTests([|project://typepal-examples/src/lang/structParameters/tests.ttl|], 
+                     #start[Program], 
+                     TModel (Tree t) { return structParametersTModelForTree(t, debug); },
+                     runName = "StructParameters");
 }
 
 value main()

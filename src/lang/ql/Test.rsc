@@ -12,13 +12,13 @@ TModel qlTModelFromName(str name, bool debug = false) {
     return collectAndSolve(pt, debug=debug);
 }
 
-TModel qlTModelFromTree(Tree pt, bool debug = false) {
+TModel qlTModelForTree(Tree pt, bool debug = false) {
     return collectAndSolve(pt, debug=debug);
 }
 
 bool qlTests(bool debug = false) {
     return runTests([|project://typepal-examples/src/lang/ql/tests.ttl|], #start[Program], TModel (Tree t) {
-        return qlTModelFromTree(t, debug=debug);
+        return qlTModelForTree(t, debug=debug);
     });
 }
 

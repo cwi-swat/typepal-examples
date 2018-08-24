@@ -26,32 +26,32 @@ str prettyAType(typeFormal(name)) = "<name>";
 str prettyAType(structDef(name, formals)) = isEmpty(formals) ? "<name>" : "<name>[<intercalate(",", formals)>]";
 str prettyAType(structType(name, actuals)) = isEmpty(actuals) ? "<name>" : "<name>[<intercalate(",", [prettyAType(a) | a <- actuals])>]";
 
-AType instantiateTypeParametersStructWithParameters(Tree selector, structDef(str name1, list[str] formals), structType(str name2, list[AType] actuals), AType t, Solver s){
+AType structParametersInstantiateTypeParameters(Tree selector, structDef(str name1, list[str] formals), structType(str name2, list[AType] actuals), AType t, Solver s){
     if(size(formals) != size(actuals)) throw checkFailed({});
     bindings = (formals[i] : actuals [i] | int i <- index(formals));
     
     return visit(t) { case typeFormal(str x) => bindings[x] };
 }
 
-default AType instantiateTypeParametersStructWithParameters(Tree selector, AType def, AType ins, AType act, Solver s) = act;
+default AType structParametersInstantiateTypeParameters(Tree selector, AType def, AType ins, AType act, Solver s) = act;
 
 
-tuple[bool isNamedType, str typeName, set[IdRole] idRoles] structWithParametersGetTypeNameAndRole(structType(str name, list[AType] actuals)){
+tuple[bool isNamedType, str typeName, set[IdRole] idRoles] structParametersGetTypeNameAndRole(structType(str name, list[AType] actuals)){
     return <true, name, {structId()}>;
 }
 
-default tuple[bool isNamedType, str typeName, set[IdRole] idRoles] structWithParametersGetTypeNameAndRole(AType t){
+default tuple[bool isNamedType, str typeName, set[IdRole] idRoles] structParametersGetTypeNameAndRole(AType t){
     return <false, "", {}>;
 }
 
-AType structWithParametersGetTypeInNamelessType(AType containerType, Tree selector, loc scope, Solver s){
+AType structParametersGetTypeInNamelessType(AType containerType, Tree selector, loc scope, Solver s){
     s.report(error(selector, "Undefined field %q on %t", selector, containerType));
 }
 
-TypePalConfig structWithParametersConfig() =
-    tconfig(getTypeNameAndRole = structWithParametersGetTypeNameAndRole,
-            getTypeInNamelessType = structWithParametersGetTypeInNamelessType,
-            instantiateTypeParameters = instantiateTypeParametersStructWithParameters);
+TypePalConfig structParametersConfig() =
+    tconfig(getTypeNameAndRole = structParametersGetTypeNameAndRole,
+            getTypeInNamelessType = structParametersGetTypeInNamelessType,
+            instantiateTypeParameters = structParametersInstantiateTypeParameters);
 
 // ---- Collect facts and constraints -----------------------------------------
 

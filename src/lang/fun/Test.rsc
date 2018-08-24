@@ -10,16 +10,16 @@ import ParseTree;
 private Fun funSample(str name) = parse(#Fun, |project://typepal-examples/src/lang/fun/<name>.fun|);
 
 TModel funTModel(str name){
-   return funTModelFromTree(funSample(name));
+   return funTModelForTree(funSample(name));
 }
 
-TModel funTModelFromTree(Tree pt, bool debug = false){
+TModel funTModelForTree(Tree pt, bool debug = false){
     return collectAndSolve(pt, debug=debug);
 }
 
 TModel funTModelFromStr(str text){
     pt = parse(#start[Fun], text).top;
-    return funTModelFromTree(pt);
+    return funTModelForTree(pt);
 }
 
 list[Message] funCheck(str name) {
@@ -28,6 +28,6 @@ list[Message] funCheck(str name) {
 }
 
 bool funTests() 
-    =  runTests([|project://typepal-examples/src/lang/fun/tests.ttl|], #Fun, funTModelFromTree);
+    =  runTests([|project://typepal-examples/src/lang/fun/tests.ttl|], #Fun, funTModelForTree, runName="Fun");
 
 value main() = funTests();

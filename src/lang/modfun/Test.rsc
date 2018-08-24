@@ -10,16 +10,16 @@ import ParseTree;
 private ModFun modfunSample(str name) = parse(#ModFun, |project://typepal-examples/src/lang/modfun/<name>.mfun|);
 
 TModel modfunTModel(str name){
-   return modfunTModelFromTree(modfunSample(name), debug=true);
+   return modfunTModelForTree(modfunSample(name), debug=true);
 }
 
-TModel modfunTModelFromTree(Tree pt, bool debug = true){
+TModel modfunTModelForTree(Tree pt, bool debug = true){
     return collectAndSolve(pt, debug=debug);
 }
 
 TModel modfunTModelFromStr(str text){
     pt = parse(#start[ModFun], text).top;
-    return modfunTModelFromTree(pt);
+    return modfunTModelForTree(pt);
 }
 
 list[Message] modfunCheck(str name) {
@@ -28,7 +28,10 @@ list[Message] modfunCheck(str name) {
 }
 
 bool modfunTests()
-    = runTests([|project://typepal-examples/src/lang/modfun/tests.ttl|], #ModFun, modfunTModelFromTree);
+    = runTests([|project://typepal-examples/src/lang/modfun/tests.ttl|], 
+               #ModFun,
+               modfunTModelForTree,
+               runName = "ModFun");
 
 value main() 
     =  modfunTests();
