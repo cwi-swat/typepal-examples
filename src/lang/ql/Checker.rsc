@@ -42,8 +42,9 @@ void collect(current: (Question) `<Label label> <Var var> : <Type t> <Value? v>`
     c.define("<var>", variableId(), var, defType(t));
     for((Value) `[<Const const>]` <- v){
         c.requireEqual(const, t, error(const, "Incompatible expression type %t, expected %t", const, t));
+        collect(const, c);
     }
-    collect(t, v, c);
+    collect(t, c);
 }
 
 void collect(current: (Question) `<Label label> <Var var> : <Type t> = <Expr e> <Value? v>`, Collector c){
@@ -52,8 +53,9 @@ void collect(current: (Question) `<Label label> <Var var> : <Type t> = <Expr e> 
     c.requireEqual(e, t, error(e, "Incompatible expression type %t, expected %t", e, t));
     for((Value) `[<Const const>]` <-  v){
         c.requireEqual(const, t, error(const, "Incompatible expression type %t, expected %t", const, t));
+        collect(const, c);
     }
-    collect(t, e, v, c);
+    collect(t, e, c);
 }
 
 void collect(current: (Question) `if ( <Expr cond> ) <Question q>`, Collector c){
@@ -98,7 +100,7 @@ void collect(current: (Expr) `( <Expr e> )`, Collector c){
 
 void collect(current: (Expr) `! <Expr e>`, Collector c){
     c.fact(current, booleanType());
-    c.requireType(e, boolenType(), error(e, "boolean type expected, found %t", e));
+    c.requireEqual(e, booleanType(), error(e, "boolean type expected, found %t", e));
     collect(e, c);
 }
 
@@ -107,7 +109,7 @@ void numericOp(Expr e, Expr e1, str op, Expr e2, Collector c){
         AType(Solver s){
             t1 = s.getType(e1); t2 = s.getType(e2);
             s.requireTrue({t1,t2} <= {integerType(), moneyType()}, error(e, "Illegal arguments %t and %t for %q", t1, t2, op));
-            return moneyType() in {t1, t2} ? moneyType() : integerType();
+            return (moneyType() in {t1, t2}) ? moneyType() : integerType();
         });
     collect(e1, e2, c);
 }
@@ -141,8 +143,21 @@ void equalityOp(Expr e, Expr e1, str op, Expr e2, Collector c){
     collect(e1, e2, c);
 }
 
-void collect(current: (Expr) `<Expr e1> == <Expr e2>`, Collector c) = equalityOp(current, e1, "\<=", e2, c);
+void collect(current: (Expr) `<Expr e1> == <Expr e2>`, Collector c) = equalityOp(current, e1, "==", e2, c);
 void collect(current: (Expr) `<Expr e1> != <Expr e2>`, Collector c) = equalityOp(current, e1, "!=", e2, c);
+
+void boolOp(Expr e, Expr e1, str op, Expr e2, Collector c){
+    c.calculate("boolean operator", e, [e1, e2],
+        AType(Solver s){
+            s.requireEqual(e1, booleanType(), error(e1, "Illegal argument %t for %q", e1, op));
+            s.requireEqual(e2, booleanType(), error(e2, "Illegal argument %t for %q", e2, op));
+            return booleanType();
+         });
+    collect(e1, e2, c);
+}
+
+void collect(current: (Expr) `<Expr e1> && <Expr e2>`, Collector c) = boolOp(current, e1, "&&", e2, c);
+void collect(current: (Expr) `<Expr e1> || <Expr e2>`, Collector c) = boolOp(current, e1, "||", e2, c);
 
 // ---- Type ------------------------------------------------------------------
 
@@ -154,7 +169,7 @@ void collect(current: Type t, Collector c){
 }
 
 // ---- Comment ---------------------------------------------------------------
-
+  
 void collect(current: (Comment)`<CStart cstart> <CommentChar* commentChars> <CEnd cend>`, Collector c)
     = collect(commentChars, c);
 

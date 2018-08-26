@@ -58,10 +58,10 @@ lexical Var = Id;
 lexical Label = @category="Constant" label: String; 
   
 syntax Type
-  = booleanType: "boolean" 
-  | stringType: "string"
-  | integerType: "integer"
-  | moneyType: "money"
+  = "boolean" 
+  | "string"
+  | "integer"
+  | "money"
   ;
 
 lexical String = [\"] StrChar* [\"];

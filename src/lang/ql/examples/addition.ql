@@ -2,7 +2,7 @@ form addition {
   "Enter number 1:"
     x: integer
   "Enter number 2:"
-    y: string 
+    y: integer 
 
   /* The result is computed based on {x} and {y} 
    * using sumation as in {x + y} and not logical
