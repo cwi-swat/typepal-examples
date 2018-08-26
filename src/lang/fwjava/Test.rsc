@@ -1,5 +1,6 @@
 module lang::fwjava::Test
 
+import lang::fwjava::Syntax;
 extend lang::fwjava::Checker;
 extend analysis::typepal::TestFramework;
 

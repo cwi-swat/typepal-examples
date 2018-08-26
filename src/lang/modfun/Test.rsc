@@ -1,5 +1,6 @@
 module lang::modfun::Test
 
+import lang::modfun::Syntax;
 extend lang::modfun::Checker;
 extend analysis::typepal::TestFramework;
 

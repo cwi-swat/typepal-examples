@@ -1,5 +1,6 @@
 module lang::fun::Test
 
+import lang::fun::Syntax;
 extend lang::fun::Checker;
 extend analysis::typepal::TestFramework;
 

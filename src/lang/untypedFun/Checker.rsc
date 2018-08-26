@@ -14,9 +14,9 @@ module lang::untypedFun::Checker
 
 // Untyped functional language with inferred types (MiniML-like)
 
-extend analysis::typepal::TypePal;
 import lang::untypedFun::Syntax;
-import ParseTree;
+
+extend analysis::typepal::TypePal;
 
 // ----  IdRoles, PathLabels and AType ------------------- 
 
@@ -51,8 +51,7 @@ void collect(current: (Expression) `<Expression exp1>(<Expression exp2>)`, Colle
      c.calculateEager("application", current, [exp1, exp2],
         AType (Solver s) { 
               s.requireUnify(functionType(tau1, tau2), exp1, error(exp1, "Function type expected, found %t", exp1));
-              s.requireUnify(tau1, exp2, error(exp2, "Incorrect type of actual parameter"));  
-              println(s.instantiate(tau2));            
+              s.requireUnify(tau1, exp2, error(exp2, "Incorrect type of actual parameter"));             
               return tau2;
             });
       collect(exp1, exp2, c);

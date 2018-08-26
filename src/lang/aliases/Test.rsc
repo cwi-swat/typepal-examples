@@ -1,5 +1,6 @@
 module lang::aliases::Test
 
+import lang::aliases::Syntax;
 extend  lang::aliases::Checker;
 extend analysis::typepal::TestFramework;
 

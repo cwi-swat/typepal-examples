@@ -1,5 +1,6 @@
 module lang::smallOO::Test
 
+import lang::smallOO::Syntax;
 extend lang::smallOO::Checker;
 extend analysis::typepal::TestFramework;
 

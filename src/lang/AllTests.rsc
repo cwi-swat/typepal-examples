@@ -23,11 +23,11 @@ bool allTests(){
         && modfunTests()
         //&& pascalTests()
         && picoTests()
-       //&& qlTests()
+        && qlTests()
         && smallOOTests()
         && staticFieldsTests()
         && structTests()
-//        && structParametersTests()
+        && structParametersTests()
         && untypedFunTests()
         ;
 }

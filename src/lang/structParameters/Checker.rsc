@@ -4,6 +4,8 @@ import lang::structParameters::Syntax;
  
 extend analysis::typepal::TypePal;
 
+import List;
+
 // ---- Extend Typepal's ATypes, IdRoles and PathRoles ------------------------
 
 data AType
@@ -27,7 +29,7 @@ str prettyAType(structDef(name, formals)) = isEmpty(formals) ? "<name>" : "<name
 str prettyAType(structType(name, actuals)) = isEmpty(actuals) ? "<name>" : "<name>[<intercalate(",", [prettyAType(a) | a <- actuals])>]";
 
 AType structParametersInstantiateTypeParameters(Tree selector, structDef(str name1, list[str] formals), structType(str name2, list[AType] actuals), AType t, Solver s){
-    if(size(formals) != size(actuals)) throw checkFailed({});
+    if(size(formals) != size(actuals)) throw checkFailed([]);
     bindings = (formals[i] : actuals [i] | int i <- index(formals));
     
     return visit(t) { case typeFormal(str x) => bindings[x] };
@@ -36,20 +38,20 @@ AType structParametersInstantiateTypeParameters(Tree selector, structDef(str nam
 default AType structParametersInstantiateTypeParameters(Tree selector, AType def, AType ins, AType act, Solver s) = act;
 
 
-tuple[bool isNamedType, str typeName, set[IdRole] idRoles] structParametersGetTypeNameAndRole(structType(str name, list[AType] actuals)){
-    return <true, name, {structId()}>;
+tuple[list[str] typeNames, set[IdRole] idRoles] structParametersGetTypeNamesAndRole(structType(str name, list[AType] actuals)){
+    return <[name], {structId()}>;
 }
 
-default tuple[bool isNamedType, str typeName, set[IdRole] idRoles] structParametersGetTypeNameAndRole(AType t){
-    return <false, "", {}>;
+default tuple[list[str] typeNames, set[IdRole] idRoles] structParametersGetTypeNamesAndRole(AType t){
+    return <[], {}>;
 }
 
 AType structParametersGetTypeInNamelessType(AType containerType, Tree selector, loc scope, Solver s){
-    s.report(error(selector, "Undefined field %q on %t", selector, containerType));
+    s.report(error(selector, "Undefined field %q on %t", "<selector>", containerType));
 }
 
 TypePalConfig structParametersConfig() =
-    tconfig(getTypeNameAndRole = structParametersGetTypeNameAndRole,
+    tconfig(getTypeNamesAndRole = structParametersGetTypeNamesAndRole,
             getTypeInNamelessType = structParametersGetTypeInNamelessType,
             instantiateTypeParameters = structParametersInstantiateTypeParameters);
 
@@ -87,6 +89,14 @@ void collect(current:(Type)`int`, Collector c) {
 
 void collect(current:(Type)`str`, Collector c) {
     c.fact(current, strType());
+}
+
+void collect(current:(TypeFormals) `[ <{TypeFormal ","}+ formals> ]`, Collector c){
+    collect(formals, c);
+}
+
+void collect(current:(TypeActuals) `[ <{Type ","}+ actuals> ]`, Collector c){
+    collect(actuals, c);
 }
 
 void collect(current: (Type) `<Id name> <TypeActuals actuals>`, Collector c){

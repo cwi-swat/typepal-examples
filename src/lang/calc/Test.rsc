@@ -1,5 +1,7 @@
 module lang::calc::Test
 
+import lang::calc::Syntax; 
+
 extend lang::calc::Checker;
 extend analysis::typepal::TestFramework;    // TypePal test utilities
 import ParseTree;                           // In order to parse tests

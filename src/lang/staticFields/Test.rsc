@@ -1,5 +1,7 @@
 module lang::staticFields::Test
 
+import lang::staticFields::Syntax;
+
 extend lang::staticFields::Checker;
 extend analysis::typepal::TestFramework;
 

@@ -16,6 +16,10 @@ import lang::pascal::Syntax;
 
 extend analysis::typepal::TypePal;
 
+import List;
+import Set;
+import String;
+
 // ----  IdRoles, PathLabels and AType ------------------- 
 
 data IdRole
@@ -205,12 +209,19 @@ void collect(ProgramHeading ph, Collector c) {
 // Block
 
 void collect(current: (Block) `<LabelDeclarationPart? labelDeclarationPart> <ConstantDefinitionPart? constantDefinitionPart> <TypeDefinitionPart? typeDefinitionPart><VariableDeclarationPart? variableDeclarationPart> <ProcedureAndFunctionDeclarationPart? procedureAndFunctionDeclarationPart> <StatementPart statementPart>`, Collector c) {
-   collect(labelDeclarationPart, 
-           constantDefinitionPart, 
-           typeDefinitionPart, 
-           variableDeclarationPart, 
-           procedureAndFunctionDeclarationPart,
-           statementPart, c);
+   
+   for(neLabelDeclarationPart <- labelDeclarationPart) collect(neLabelDeclarationPart, c);
+   for(neConstantDefinitionPart <- constantDefinitionPart) collect(neConstantDefinitionPart, c);
+   for(neTypeDefinitionPart <- typeDefinitionPart) collect(neTypeDefinitionPart, c);
+   for(neVariableDeclarationPart <- variableDeclarationPart) collect(neVariableDeclarationPart, c);
+   for(neProcedureAndFunctionDeclarationPart <- procedureAndFunctionDeclarationPart) collect(neProcedureAndFunctionDeclarationPart, c);
+   collect(statementPart, c);
+   //collect(labelDeclarationPart, 
+   //        constantDefinitionPart, 
+   //        typeDefinitionPart, 
+   //        variableDeclarationPart, 
+   //        procedureAndFunctionDeclarationPart,
+   //        statementPart, c);
 }
 // Labels
 
@@ -562,7 +573,7 @@ void overloadRelational(Expression e, str op, Expression exp1, Expression exp2, 
                         case [pointerType(tau1), pointerType(anyPointerType())]: return booleanType();
                     }
                  }
-                 s.report(error(e, "`<op>` not defined on %t and %t", exp1, exp2)); 
+                 s.report(error(e, "%q not defined on %t and %t", op, exp1, exp2)); 
                }
             }
         });
@@ -824,7 +835,7 @@ void collect(current: (ProcedureStatement) `<ProcedureIdentifier id> ( <{ActualP
      switch("<id>"){
      case "new": {
             if(size(actualList) != 1){
-                c.error(s, "One argument required");
+                c.report(error(current, "One argument required"));
             }
             c.require("new", current, actualList,
                 void(Solver s){
@@ -883,12 +894,12 @@ void collect(current: (IfStatement) `if <Expression condition> then <Statement t
 // Case statement
 
 void collect(current: (CaseStatement) `case <Expression exp> of <{CaseListElement ";"}+ caseElements>  end`, Collector c){
-    caseLabels = [clab | (CaseListElement) `<{ CaseLabel ","}+ caseLabels> : <Statement caseStatement>` <- caseElements,"<caseLabels>" != "", clab <- caseLabels];
+    caseLabelList = [clab | (CaseListElement) `<{ CaseLabel ","}+ caseLabels> : <Statement caseStatement>` <- caseElements,"<caseLabels>" != "", clab <- caseLabels];
 
-    c.require("case statement", current, exp + caseLabels,
+    c.require("case statement", current, exp + caseLabelList,
         void(Solver s){
             expType = s.getType(exp);
-            for(clab <- caseLabels){
+            for(clab <- caseLabelList){
                 s.requireSubType(clab, expType, error(clab, "Case label %q should be compatible with selector type %t, found %t","<clab>", expType, clab));
             }
         });

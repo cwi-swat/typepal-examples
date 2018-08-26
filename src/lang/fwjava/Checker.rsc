@@ -23,7 +23,6 @@ data AType
     | methodType(AType returnType, AType argTypes)
     ;
 
-str prettyAType(useType(Use use)) = "<use.id>";
 str prettyAType(methodType(AType returnType, AType argTypes)) 
     = "method <prettyAType(returnType)>(<prettyAType(argTypes)>)";
 str prettyAType(classType(str cname)) = cname;
@@ -81,7 +80,7 @@ TModel fwjPreSolver(map[str,Tree] namedTrees, TModel tm) {
         tm.config.isSubType = FWJsubtype;
         return tm;
      } else {
-        throw "Inconsistent value of key_extendsRelation: <tm.store[extendsRelation]>";
+        throw "Inconsistent value of key_extendsRelation: <tm.store[key_extendsRelation]>";
      }
 }
 
@@ -155,8 +154,8 @@ void collect(Class cls, Collector c){
     c.use(cls.id, {classId()});
 }
 
-void collect(Constructor c, Collector c){
-     c.use(c.id, {constructorId()});
+void collect(Constructor cons, Collector c){
+     c.use(cons.id, {constructorId()});
 }
 
 void collect(Variable var, Collector c){

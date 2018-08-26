@@ -1,5 +1,7 @@
 module lang::structParameters::Test
 
+import lang::structParameters::Syntax;
+
 extend lang::structParameters::Checker;
 extend analysis::typepal::TestFramework;
 

@@ -1,5 +1,7 @@
 module lang::untypedFun::Test
 
+import lang::untypedFun::Syntax;
+
 extend lang::untypedFun::Checker;
 extend analysis::typepal::TestFramework;
 

@@ -1,8 +1,10 @@
 module lang::pascal::Test
 
+import lang::pascal::Syntax;
 extend lang::pascal::Checker;
 extend analysis::typepal::TestFramework;
-import PareTree;
+import ParseTree;
+import IO;
 
 // ----  Examples & Tests --------------------------------
 
@@ -15,7 +17,7 @@ TModel pascalTModelForTree(Tree pt, bool debug){
     return newSolver(pt, c.run()).run();
 }
 
-TModel pascalTModelFromName(str mname, bool debug){
+TModel pascalTModelForName(str mname, bool debug){
     pt = parse(#start[Program], |project://typepal-examples/src/lang/pascal/examples/<mname>.pascal|).top;
     return pascalTModelForTree(pt, debug);
 }
@@ -33,7 +35,7 @@ bool pascalTests(bool debug = false) {
     });
     println("Executing examples");
     for(ex <- examples){
-        msgs = pascalTModelFromName(ex, false).messages;
+        msgs = pascalTModelForName(ex, false).messages;
         if(isEmpty(msgs)){
             println("<ex>: ok");
         } else {

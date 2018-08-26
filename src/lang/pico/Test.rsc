@@ -1,5 +1,6 @@
 module lang::pico::Test
 
+import lang::pico::Syntax;
 extend lang::pico::Checker;
 extend analysis::typepal::TestFramework;
 

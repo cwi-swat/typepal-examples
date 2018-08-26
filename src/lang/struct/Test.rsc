@@ -1,5 +1,7 @@
 module lang::struct::Test
 
+import lang::struct::Syntax;
+
 extend lang::struct::Checker;
 extend analysis::typepal::TestFramework;
 

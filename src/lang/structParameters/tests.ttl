@@ -44,9 +44,9 @@ test WrongSelect1 [[
     struct L[E] { E e, int n };
     L[int] li = new L[int];
     int n = li.mm;
-]] expect { "No definition for field `mm` in type `L[int]`"}
+]] expect { "No definition found for field `mm` in type `L[int]`"}
 
 test WrongSelect2 [[
     struct L[E] { E e, int n };
     int m = 123.n;
-]] expect { "Unresolved type for `n`" }
+]] expect { "Undefined field `n` on `int`" }
