@@ -21,7 +21,7 @@ bool allTests(){
         && funTests()
         && fwjTests()
         && modfunTests()
-        //&& pascalTests()
+        && pascalTests()
         && picoTests()
         && qlTests()
         && smallOOTests()
