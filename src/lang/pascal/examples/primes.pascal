@@ -21,12 +21,12 @@ begin {initialize}
     
     with next do
     repeat {find next prime}
-        while not(bit in sive[word]) do bit := succ(bit);
+        while not(bit in sieve[word]) do bit := succ(bit);
         primes[word] := primes[word] + [bit];
         c := 2*bit + 1;
         j := bit; k := word;
         while k<=w do {eliminate}
-        begin sive[k] := sive[k] - [j];
+        begin sieve[k] := sieve[k] - [j];
             k := k + word*2; j := j + c;
             while j>maxbit do
                 begin k := k + 1; j := j - wdlength
@@ -36,7 +36,7 @@ begin {initialize}
             begin empty := true; bit := 0
             end;
         while empty and (word<w) do
-            begin word := word+1; empty := sive[word]=[]
+            begin word := word+1; empty := sieve[word]=[]
             end
      until empty {ends with}
      
