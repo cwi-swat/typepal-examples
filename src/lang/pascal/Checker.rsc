@@ -80,6 +80,8 @@ bool isScalarType(scalarType(list[str] elems))          = true;
 bool isScalarType(subrangeType(AType associatedType))   = true;
 default bool isScalarType(AType t)                      = false;
 
+AType elimSubrangeType(AType t) = visit(t) { case subrangeType(AType t1) => t1 };
+
 str prettyAType(booleanType())                                     = "boolean";
 str prettyAType(integerType())                                     = "integer";
 str prettyAType(realType())                                        = "real";
@@ -173,8 +175,15 @@ void pascalPreCollectInitialization(Tree tree, Collector c){
     c.define("any",     typeId(),       mkTree(23), defType(anyPointerType()));
     c.define("char",    typeId(),       mkTree(24), defType(charType()));
     
-    c.define("eof",    nullaryFunctionId(),   mkTree(25), defType(booleanType()));
-    c.define("eoln",   nullaryFunctionId(),   mkTree(26), defType(booleanType()));
+    c.define("eof",    nullaryFunctionId(),   
+                                        mkTree(25), defType(booleanType()));
+    c.define("eoln",   nullaryFunctionId(),   
+                                        mkTree(26), defType(booleanType()));
+    c.define("trunc",  functionId(),    mkTree(27), defType(functionType(atypeList([realType()]), integerType())));
+    c.define("ord",    functionId(),    mkTree(29), defType(functionType(atypeList([integerType()]), charType())));
+    c.define("chr",    functionId(),    mkTree(30), defType(functionType(atypeList([charType()]), integerType())));
+    c.define("succ",   functionId(),    mkTree(31), defType(functionType(atypeList([integerType()]), integerType())));
+    c.define("pred",   functionId(),    mkTree(32), defType(functionType(atypeList([integerType()]), integerType())));
 }
 
 tuple[list[str] typeNames, set[IdRole] idRoles] pascalGetTypeNamesAndRole(recordType(str name)){
@@ -550,24 +559,29 @@ void collect(current: (Expression) `( <Expression exp> )`, Collector c){
 void overloadRelational(Expression e, str op, Expression exp1, Expression exp2, Collector c){
     c.calculate("relational operator `<op>`", e,  [exp1, exp2], 
         AType(Solver s) {
-              switch([s.getType(exp1), s.getType(exp2)]){
+              t1 = elimSubrangeType(s.getType(exp1));
+              t2 = elimSubrangeType(s.getType(exp2));
+              
+              switch([t1, t2]){
               case [booleanType(), booleanType()]: return booleanType();
               case [integerType(), integerType()]: return booleanType();
               case [integerType(), realType()]: return booleanType();
               case [realType(), integerType()]: return booleanType();
               case [realType(), realType()]: return booleanType();
               case [scalarType(tau1), scalarType(tau1)]: return booleanType();
-              case [subrangeType(integerType()), realType()]: return booleanType();
-              case [realType(), subrangeType(integerType())]: return booleanType();
-              case [tau1, subrangeType(tau1)]: return booleanType();
-              case [subrangeType(tau1), tau1]: return booleanType();
-              case [subrangeType(tau1), subrangeType(tau1)]: return booleanType();
+              //case [subrangeType(integerType()), realType()]: return booleanType();
+              //case [realType(), subrangeType(integerType())]: return booleanType();
+              //case [tau1, subrangeType(tau1)]: return booleanType();
+              //case [subrangeType(tau1), tau1]: return booleanType();
+              //case [subrangeType(tau1), subrangeType(tau1)]: return booleanType();
               case [tau1, setType(tau1)]: return booleanType();
               case [setType(tau1), setType(tau1)]: return booleanType();
+              case [setType(voidType()), setType(tau1)]: return booleanType();
+              case [setType(tau1), setType(voidType())]: return booleanType();
               case [ tau1, tau1 ]: return booleanType();
               default: {
                  if(op == "\<\>"){
-                    switch([s.getType(exp1), s.getType(exp2)]){
+                    switch([t1, t2]){
                         case [pointerType(tau1), pointerType(tau1)]: return booleanType();
                         case [pointerType(anyPointerType()), pointerType(tau1)]: return booleanType();
                         case [pointerType(tau1), pointerType(anyPointerType())]: return booleanType();
@@ -613,15 +627,17 @@ void collect(current: (Expression) `<Expression exp1> in <Expression exp2>`, Col
 void collect(current: (Expression) `<Expression exp1> * <Expression exp2>`, Collector c){
     c.calculate("multiplication", current, [exp1, exp2], 
         AType(Solver s) { 
-            switch([s.getType(exp1), s.getType(exp2)]){
+            t1 = elimSubrangeType(s.getType(exp1));
+            t2 = elimSubrangeType(s.getType(exp2));
+            switch([t1, t2]){
               case [integerType(), integerType()]: return integerType();
               case [integerType(), realType()]: return realType();
               case [realType(), integerType()]: return realType();
               case [realType(), realType()]: return realType();
-              case [subrangeType(integerType()), realType()]: return realType();
-              case [realType(), subrangeType(integerType())]: return realType();
-              case [subrangeType(tau1), tau1]: return tau1;
-              case [subrangeType(tau1), subrangeType(tau1)]: return tau1;
+              //case [subrangeType(integerType()), realType()]: return realType();
+              //case [realType(), subrangeType(integerType())]: return realType();
+              //case [subrangeType(tau1), tau1]: return tau1;
+              //case [subrangeType(tau1), subrangeType(tau1)]: return tau1;
               case [setType(tau1), setType(tau1)]: return setType(tau1);
               default:
                    s.report(error(current, "`*` not defined on %t and %t", exp1, exp2));
@@ -692,14 +708,16 @@ void collect(current: (Expression) `<Sign sign> <Expression exp>`, Collector c){
 void overloadAdding(Expression e, str op, Expression exp1, Expression exp2, Collector c){
  c.calculate("adding operator", e, [exp1, exp2], 
      AType(Solver s) { 
-        switch([s.getType(exp1), s.getType(exp2)]){
+        t1 = elimSubrangeType(s.getType(exp1));
+        t2 = elimSubrangeType(s.getType(exp2));
+        switch([t1, t2]){
            case [integerType(), integerType()]: return integerType();
            case [integerType(), realType()]: return realType();
            case [realType(), integerType()]: return realType();
            case [realType(), realType()]: return realType();
-           case [tau1, subrangeType(tau1)]:  return tau1;
-           case [subrangeType(tau1), tau1]: return tau1;
-           case [subrangeType(tau1), subrangeType(tau1)]: return tau1;
+           //case [tau1, subrangeType(tau1)]:  return tau1;
+           //case [subrangeType(tau1), tau1]: return tau1;
+           //case [subrangeType(tau1), subrangeType(tau1)]: return tau1;
            case [setType(tau1), setType(tau1)]: return setType(tau1);
            default:
                 s.report(error(e, "%q not defined on %t and %t", op, exp1, exp2));  
@@ -750,6 +768,8 @@ void collect(current: (IndexedVariable) `<ArrayVariable var> [ <{Expression ","}
 void collect(fd: (FunctionDesignator)  `<FunctionIdentifier fid> ( <{ ActualParameter ","}+  actuals> )`, Collector c){
      c.use(fid, {functionId()});
      actualList = [exp | Tree exp <- actuals];
+     
+     // int -> int; real -> real
      AType iirr(Solver s) { switch(s.getType(actualList[0])){
                         case integerType(): return integerType();
                         case realType(): return realType();
@@ -757,6 +777,7 @@ void collect(fd: (FunctionDesignator)  `<FunctionIdentifier fid> ( <{ ActualPara
                             s.report(error(fd, "Illegal call of %q with argument %t", fid, actualList[0]));
                       }
                     };
+     // int -> real; real -> real              
      AType irrr(Solver s) { switch(s.getType(actualList[0])){
                         case integerType(): return realType();
                         case realType(): return realType();
