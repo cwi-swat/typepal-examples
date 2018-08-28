@@ -30,20 +30,22 @@ list[str] examples = ["beginend", "bisect", "complex", "convert", "cosine", "egf
 bool pascalTests(bool debug = false) {
     bool ok = runTests([|project://typepal-examples/src/lang/pascal/expression-tests.ttl|,
                         |project://typepal-examples/src/lang/pascal/statement-tests.ttl|
-                       ], #start[Program], TModel (Tree t) {
-        return pascalTModelForTree(t, debug);
-    });
-    println("Executing examples");
+                       ], #start[Program], TModel (Tree t) { return pascalTModelForTree(t, debug); },
+                       runName = "Pascal");
+    println("Executing Pascal examples\r");
+    int n = 0;
     for(ex <- examples){
+        n += 1;
         msgs = pascalTModelForName(ex, false).messages;
         if(isEmpty(msgs)){
-            println("<ex>: ok");
+            print("<spinChar(n)> <ex>: ok\r");
         } else {
             println("<ex>:");
             println(msgs);
             ok = false;
         }
     }
+    println("Executing Pascal examples: <ok>");
     return ok;
 }
 

@@ -18,9 +18,9 @@ TModel qlTModelForTree(Tree pt, bool debug = false) {
 }
 
 bool qlTests(bool debug = false) {
-    return runTests([|project://typepal-examples/src/lang/ql/tests.ttl|], #start[Form], TModel (Tree t) {
-        return qlTModelForTree(t, debug=debug);
-    });
+    return runTests([|project://typepal-examples/src/lang/ql/tests.ttl|], #start[Form], 
+                     TModel (Tree t) { return qlTModelForTree(t, debug=debug); },
+                     runName = "QL");
 }
 
 value main()
