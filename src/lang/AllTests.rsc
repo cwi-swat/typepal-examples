@@ -2,6 +2,8 @@ module lang::AllTests
 
 import lang::aliases::Test;
 import lang::calc::Test;
+import lang::extending::Test;
+import lang::fixedMembers::Test;
 import lang::fun::Test;
 import lang::fwjava::Test;
 import lang::modfun::Test;
@@ -18,6 +20,9 @@ bool allTests(){
     return  
            aliasesTests()
         && calcTests()
+        && extendingTests()
+        
+        && fixedMembersTests()
         && funTests()
         && fwjTests()
         && modfunTests()

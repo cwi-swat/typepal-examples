@@ -8,19 +8,19 @@ import ParseTree;
 
 // ----  Examples & Tests --------------------------------
 
-TModel picoTModelFromName(str name, bool debug = false) {
+TModel picoTModelFromName(str name) {
     Tree pt = parse(#start[Program], |project://typepal-examples/src/pico/<name>.pico|);
-    return collectAndSolve(pt, debug=debug);
+    return collectAndSolve(pt);
 }
 
-TModel picoTModelForTree(Tree pt, bool debug = false) {
-    return collectAndSolve(pt, debug=debug);
+TModel picoTModelForTree(Tree pt) {
+    return collectAndSolve(pt);
 }
 
-bool picoTests(bool debug = false) {
+bool picoTests() {
     return runTests([|project://typepal-examples/src/lang/pico/tests.ttl|], 
                     #start[Program], 
-                    TModel (Tree t) { return picoTModelForTree(t, debug=debug); },
+                    TModel (Tree t) { return picoTModelForTree(t); },
                     runName = "Pico");
 }
 

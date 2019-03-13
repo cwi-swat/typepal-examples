@@ -9,19 +9,19 @@ import ParseTree;
 
 // ---- Testing ---------------------------------------------------------------
 
-TModel staticFieldsTModelForTree(Tree pt, bool debug){
-    return collectAndSolve(pt, config=staticFieldsConfig(), debug=debug);
+TModel staticFieldsTModelForTree(Tree pt){
+    return collectAndSolve(pt, config=staticFieldsConfig());
 }
 
-TModel staticFieldsTModelFromName(str mname, bool debug){
+TModel staticFieldsTModelFromName(str mname){
     pt = parse(#start[Program], |project://typepal-examples/src/lang/staticFields/<mname>.struct|).top;
-    return staticFieldsTModelForTree(pt, debug);
+    return staticFieldsTModelForTree(pt);
 }
 
-bool staticFieldsTests(bool debug = false) {
+bool staticFieldsTests() {
     return runTests([|project://typepal-examples/src/lang/staticFields/tests.ttl|], 
                     #start[Program], 
-                    TModel (Tree t) { return staticFieldsTModelForTree(t, debug); },
+                    TModel (Tree t) { return staticFieldsTModelForTree(t); },
                     runName = "StaticFields");
 }
 

@@ -2,7 +2,7 @@ test Declare1 [[ struct L[E] { E e, int n }; ]]
 
 test UndefinedParameter [[ 
     struct L[E] { G e, int n };
- ]] expect { "Undefined struct or typeFormal `G`" }
+ ]] expect { "Undefined _ `G`" }
 
 test New1 [[
     struct L[E] { E e, int n };
@@ -12,7 +12,7 @@ test New1 [[
 test UndefinedStruct [[
     struct L[E] { E e, int n };
     M[int] li = new M[int];
-]] expect { "Undefined struct or typeFormal `M`" }
+]] expect { "Undefined _ `M`" }
 
 test WrongArity [[
     struct L[E] { E e, int n };

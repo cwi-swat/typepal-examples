@@ -8,18 +8,18 @@ import ParseTree;
 
 // ----  Examples & Tests --------------------------------
 
-TModel qlTModelForName(str name, bool debug = false) {
+TModel qlTModelForName(str name) {
     Tree pt = parse(#start[Form], |project://typepal-examples/src/lang/ql/examples/<name>.ql|);
-    return collectAndSolve(pt, debug=debug);
+    return collectAndSolve(pt);
 }
 
-TModel qlTModelForTree(Tree pt, bool debug = false) {
-    return collectAndSolve(pt, debug=debug);
+TModel qlTModelForTree(Tree pt) {
+    return collectAndSolve(pt);
 }
 
-bool qlTests(bool debug = false) {
+bool qlTests() {
     return runTests([|project://typepal-examples/src/lang/ql/tests.ttl|], #start[Form], 
-                     TModel (Tree t) { return qlTModelForTree(t, debug=debug); },
+                     TModel (Tree t) { return qlTModelForTree(t); },
                      runName = "QL");
 }
 

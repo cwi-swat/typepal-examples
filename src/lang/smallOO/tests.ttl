@@ -20,7 +20,7 @@ test UndefinedField1 [[
         int i;
         int f (int b) = j + b;
     }
-]] expect { "Undefined method, field or parameter `j`" }
+]] expect { "Undefined _ `j`" }
 
 test UndefinedParameter [[
     module M
@@ -28,7 +28,7 @@ test UndefinedParameter [[
         int i;
         int f (int b) = i + c;
     }
-]] expect { "Undefined method, field or parameter `c`" }
+]] expect { "Undefined _ `c`" }
 
 test WrongPlus1 [[
     module M

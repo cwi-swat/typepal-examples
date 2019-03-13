@@ -9,19 +9,19 @@ import ParseTree;
 
 // ---- Testing ---------------------------------------------------------------
 
-TModel structTModelForTree(Tree pt, bool debug){
-    return collectAndSolve(pt, config = structConfig(), debug=debug);
+TModel structTModelForTree(Tree pt){
+    return collectAndSolve(pt, config = structConfig());
 }
 
-TModel structTModelFromName(str mname, bool debug){
+TModel structTModelFromName(str mname){
     pt = parse(#start[Program], |project://typepal-examples/src/lang/struct/<mname>.struct|).top;
-    return structTModelForTree(pt, debug);
+    return structTModelForTree(pt);
 }
 
-bool structTests(bool debug = false) {
+bool structTests() {
     return runTests([|project://typepal-examples/src/lang/struct/tests.ttl|], 
                     #start[Program],
-                    TModel (Tree t) { return structTModelForTree(t, debug); },
+                    TModel (Tree t) { return structTModelForTree(t); },
                     runName = "Struct");
 }
 

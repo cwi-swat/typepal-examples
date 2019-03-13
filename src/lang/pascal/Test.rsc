@@ -11,7 +11,7 @@ import IO;
 TModel pascalTModelForTree(Tree pt, bool debug){
     if(pt has top) pt = pt.top;
     
-    c = newCollector("Pascal checker", pt, config=pascalConfig(), debug=debug);
+    c = newCollector("Pascal checker", pt, config=pascalConfig());
     pascalPreCollectInitialization(pt, c);
     collect(pt, c);
     return newSolver(pt, c.run()).run();

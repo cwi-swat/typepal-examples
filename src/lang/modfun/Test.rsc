@@ -11,11 +11,11 @@ import ParseTree;
 private ModFun modfunSample(str name) = parse(#ModFun, |project://typepal-examples/src/lang/modfun/<name>.mfun|);
 
 TModel modfunTModel(str name){
-   return modfunTModelForTree(modfunSample(name), debug=true);
+   return modfunTModelForTree(modfunSample(name));
 }
 
-TModel modfunTModelForTree(Tree pt, bool debug = true){
-    return collectAndSolve(pt, debug=debug);
+TModel modfunTModelForTree(Tree pt){
+    return collectAndSolve(pt);
 }
 
 TModel modfunTModelFromStr(str text){

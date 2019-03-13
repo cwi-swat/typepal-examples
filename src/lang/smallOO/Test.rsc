@@ -8,23 +8,23 @@ import ParseTree;
 
 // ---- Testing ---------------------------------------------------------------
                
-TModel smallOOTModelForTree(Tree pt, bool debug){
-    return collectAndSolve(pt, config=smallConfig(), debug=debug);
+TModel smallOOTModelForTree(Tree pt){
+    return collectAndSolve(pt, config=smallConfig());
 }
 
-TModel smallOOTModelFromName(str mname, bool debug){
+TModel smallOOTModelFromName(str mname){
     pt = parse(#start[Module], |project://typepal-examples/src/lang/smallOO/<mname>.small|).top;
-    return smallOOTModelForTree(pt, debug);
+    return smallOOTModelForTree(pt);
 }
 
-list[Message] checkSmallOO(str mname, bool debug=false) {
-    return smallOOTModelFromName(mname, debug).messages;
+list[Message] checkSmallOO(str mname) {
+    return smallOOTModelFromName(mname).messages;
 }
 
-bool smallOOTests(bool debug = false) {
+bool smallOOTests() {
     return runTests([|project://typepal-examples/src/lang/smallOO/tests.ttl|], 
                     #start[Module], 
-                    TModel (Tree t) { return smallOOTModelForTree(t, debug); },
+                    TModel (Tree t) { return smallOOTModelForTree(t); },
                     runName = "SmallOO");
 }
 

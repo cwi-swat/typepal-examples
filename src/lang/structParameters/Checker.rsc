@@ -114,7 +114,7 @@ void collect(current: (Type) `<Id name> <TypeActuals actuals>`, Collector c){
 
 void collect(current:(Expression) `new <Id name><TypeActuals actuals>`, Collector c){
     c.use(name, {structId()});
-    actual_list = [a | a <- actuals.actuals];
+    actual_list = actuals is noActuals ? [] : [a | a <- actuals.actuals];
     c.calculate("new `<name>`", current, name + actual_list,
         AType(Solver s){
             if(structDef(nm, formals) := s.getType(name)){

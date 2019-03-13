@@ -11,7 +11,7 @@ test OkAlias2 [[
 
 test UndefinedAlias1 [[
     INT n = 0;
-]] expect { "Undefined struct or alias `INT`" }
+]] expect { "Undefined _ `INT`" }
 
 test IndirectAlias1 [[
     alias INT1 = int;

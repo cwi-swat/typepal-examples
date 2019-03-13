@@ -14,8 +14,8 @@ TModel funTModel(str name){
    return funTModelForTree(funSample(name));
 }
 
-TModel funTModelForTree(Tree pt, bool debug = false){
-    return collectAndSolve(pt, debug=debug);
+TModel funTModelForTree(Tree pt){
+    return collectAndSolve(pt);
 }
 
 TModel funTModelFromStr(str text){

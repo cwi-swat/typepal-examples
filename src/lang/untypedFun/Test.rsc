@@ -9,13 +9,12 @@ extend analysis::typepal::TestFramework;
 
 private Expression sample(str name) = parse(#start[Expression], |project://typepal-examples/src/lang/untypedFun/<name>.ufun|).top;
 
-list[Message] untypedFunCheck(str name, bool debug = false){
-    Tree pt =  parse(#start[Expression], |project://typepal-examples/src/lang/untypedFun/<name>.ufun|).top;
-    return untypedFunTModelForTree(sample(name), debug=debug).messages;
+list[Message] untypedFunCheck(str name){
+    return untypedFunTModelForTree(sample(name)).messages;
 }
 
-TModel untypedFunTModelForTree(Tree pt, bool debug=false)
-    = collectAndSolve(pt, debug=debug);
+TModel untypedFunTModelForTree(Tree pt)
+    = collectAndSolve(pt);
 
 bool untypedFunTests()
     = runTests([|project://typepal-examples/src/lang/untypedFun/tests.ttl|], #Expression, untypedFunTModelForTree, runName="UntypedFun");

@@ -3,9 +3,9 @@ test Constant1 [[  program tst(output); var x : boolean; begin x := true end. ]]
 test Constant2 [[  program tst(output); var x : integer; begin x := 42 end. ]]
 test Constant3 [[  program tst(output); var x : string; begin x := 'abc' end. ]]
 test Constant4 [[  program tst(output); var x : set of integer; begin x := [1, 2, 3] end. ]]
-test Constant5 [[  program tst(output); var x : set of integer; begin x := [1, 'a', 3] end. ]] expect { "Elements of set should have the same type, found `char` and `integer`" }
+test Constant5 [[  program tst(output); var x : set of integer; begin x := [1, 'a', 3] end. ]] expect { "Elements of set should have the same type, _" }
 test Constant6 [[  program tst(output); var x : set of integer; begin x := [1, 2..5, 7] end. ]]
-test Constant7 [[  program tst(output); var x : set of integer; begin x := [1, 2..true, 7] end. ]] expect { "Set element range requires lower and upper bound of equal type, found `integer` and `boolean`" }
+test Constant7 [[  program tst(output); var x : set of integer; begin x := [1, 2..true, 7] end. ]] expect { "Set element range requires lower and upper bound of equal type, found _" }
 test Constant8 [[  program tst(output); type color = (red, green, blue); var x : color; begin x := green end. ]]
 
 test Not1 [[ program tst(output); var b : boolean; begin b := not true end. ]]
