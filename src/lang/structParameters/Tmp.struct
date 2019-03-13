@@ -1,0 +1,3 @@
+struct L { int n };
+L l = new L;
+int n = l.n;  // n is not found

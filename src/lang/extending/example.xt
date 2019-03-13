@@ -1,0 +1,17 @@
+	struct s1 {
+		var x: int = 0
+	}
+	
+	struct s2 {
+		var s: s1 = new s1
+	}
+
+    exec m1{
+    
+    	import s2
+    
+    	var x: s2 = new s2
+    	var y: int = x.s.x
+    	
+    
+    }
