@@ -43,14 +43,12 @@ default tuple[list[str] typeNames, set[IdRole] idRoles] extendingGetTypeNamesAnd
 }
 
 Accept extendingIsAcceptablePath(TModel tm, loc defScope, loc def, Use use, PathRole pathRole) {
-println("extendingIsAcceptablePath: <def>, <use>, <pathRole>");
     return varId() in use.idRoles  && pathRole == importPath() ? ignoreContinue() : acceptBinding();
 }
 
 TypePalConfig extendingConfig() =
     tconfig(getTypeNamesAndRole = extendingGetTypeNamesAndRole
             , isAcceptablePath = extendingIsAcceptablePath
-         //   , lookup = lookup
             );
  
 // ---- Collect facts and constraints -----------------------------------------
