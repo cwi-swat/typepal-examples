@@ -1,17 +1,17 @@
-	struct s1 {
-		var x: int = 0
-	}
-	
-	struct s2 {
-		var s: s1 = new s1
-	}
-
+  // DISCUSSION: foo is really ambiguous here!
+    // Reports double declaration of foo but it should not.
     exec m1{
     
-    	import s2
+        var foo : int = 0
     
-    	var x: s2 = new s2
-    	var y: int = x.s.x
-    	
+    }
+    exec m2{
+    
+        extend m1
+    
+        var foo: int = 0
+        
+        var bar: int = foo // which foo to call?
+    
     
     }

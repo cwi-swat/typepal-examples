@@ -60,7 +60,7 @@ test Test2 [[
 ]]
 
 test Test3 [[
-    // DISCUSSION: foo is really ambiguous here!
+    // RESOLVED DISCUSSION: inner foo is used.
 	// Reports double declaration of foo but it should not.
 	exec m1{
     
@@ -77,11 +77,11 @@ test Test3 [[
     
     
     }
-]] expect {"Double declaration of `foo`"}
+]]
 
 
 test Test4 [[
-// FIXED
+// DISCUSSION: in line with the previous test, no double declaration should be reported
 // It does not report double declaration but for the wrong reasons. 
 // Apparently there is a bug, if a double declared variable is not used, the error is silent.
 
@@ -98,7 +98,7 @@ test Test4 [[
     
     
     }
-]] expect { "Double declaration of `foo`"}
+]]
 
 
 test Test5 [[
