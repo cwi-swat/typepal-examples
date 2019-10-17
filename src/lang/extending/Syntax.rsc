@@ -1,6 +1,6 @@
-module lang::extending::Syntax
+module examples::extending::Syntax
 
-extend lang::CommonLex;
+extend examples::CommonLex;
 
 // ---- Programs with struct declarations and aliases -------------------------
 

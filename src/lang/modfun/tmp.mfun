@@ -1,1 +1,0 @@
-module A { def x : int = y; }

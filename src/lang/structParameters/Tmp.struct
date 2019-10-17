@@ -1,3 +1,4 @@
-struct L { int n };
-L l = new L;
-int n = l.n;  // n is not found
+ struct L[E] { E e, int n };
+    L[str] li = new L[str];
+    int n = li.n;
+    str m = li.e;

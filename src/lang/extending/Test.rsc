@@ -1,7 +1,7 @@
-module lang::extending::Test
+module examples::extending::Test
 
-import lang::extending::Syntax;
-extend lang::extending::Checker;
+import examples::extending::Syntax;
+extend examples::extending::Checker;
 
 extend analysis::typepal::TestFramework;
 
@@ -15,14 +15,14 @@ TModel extendingTModelForTree(Tree pt, bool debug = false){
 }
 
 TModel extendingTModelFromName(str mname, bool debug = false){
-    pt = parse(#start[Program], |project://typepal-examples/src/lang/extending/<mname>.xt|).top;
+    pt = parse(#start[Program], |project://typepal/src/examples/extending/<mname>.xt|).top;
     return extendingTModelForTree(pt, debug=debug);
 }
 
-bool extendingTests(bool debug = false) {
-    return runTests([|project://typepal-examples/src/lang/extending/extending.ttl|], 
+test bool extendingTests() {
+    return runTests([|project://typepal/src/examples/extending/extending.ttl|], 
                     #start[Program], 
-                    TModel (Tree t) { return extendingTModelForTree(t, debug=debug); },
+                    TModel (Tree t) { return extendingTModelForTree(t, debug=false); },
                     runName = "extending");
 }
 

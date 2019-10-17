@@ -1,4 +1,4 @@
-module lang::extending::Plugin
+module examples::extending::Plugin
 
 import ParseTree;
 import util::IDE;
@@ -8,10 +8,10 @@ import ValueIO;
 
 import analysis::typepal::TypePal;
 
-import lang::extending::Syntax;
-import lang::extending::Checker;
+import examples::extending::Syntax;
+import examples::extending::Checker;
 
-import lang::extending::Test;
+import examples::extending::Test;
 
 data MtlManifest 
  = mtlManifest(

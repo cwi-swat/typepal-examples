@@ -35,8 +35,9 @@ AType structParametersInstantiateTypeParameters(Tree current, structDef(str name
     return visit(t) { case typeFormal(str x) => bindings[x] };
 }
 
-default AType structParametersInstantiateTypeParameters(Tree current, AType def, AType ins, AType act, Solver s) = act;
-
+default AType structParametersInstantiateTypeParameters(Tree current, AType def, AType ins, AType act, Solver s) {
+    return act;
+}
 
 tuple[list[str] typeNames, set[IdRole] idRoles] structParametersGetTypeNamesAndRole(structType(str name, list[AType] actuals)){
     return <[name], {structId()}>;
@@ -104,7 +105,8 @@ void collect(current: (Type) `<Id name> <TypeActuals actuals>`, Collector c){
     if(actuals is withTypeActuals){
         tpActuals = [tp | tp <- actuals.actuals];
         c.calculate("actual type", current, name + tpActuals,
-            AType(Solver s) { return structType("<name>", [s.getType(tp) | tp <- tpActuals]);});
+            AType(Solver s) { 
+                return structType("<name>", [s.getType(tp) | tp <- tpActuals]);});
             
         collect(actuals, c);
     } else {

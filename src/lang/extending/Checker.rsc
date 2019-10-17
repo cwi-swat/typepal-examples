@@ -1,6 +1,6 @@
-module lang::extending::Checker
+module examples::extending::Checker
 
-import lang::extending::Syntax;
+import examples::extending::Syntax;
 
 extend analysis::typepal::TypePal;
 
@@ -43,12 +43,15 @@ default tuple[list[str] typeNames, set[IdRole] idRoles] extendingGetTypeNamesAnd
 }
 
 Accept extendingIsAcceptablePath(TModel tm, loc defScope, loc def, Use use, PathRole pathRole) {
-    return varId() in use.idRoles  && pathRole == importPath() ? ignoreContinue() : acceptBinding();
+    res = varId() in use.idRoles  && pathRole == importPath() ? ignoreContinue() : acceptBinding();
+    println("extendingIsAcceptablePath: <defScope>, <def>, <use>, <pathRole> ==\> <res>");
+    return res;
 }
 
 TypePalConfig extendingConfig() =
     tconfig(getTypeNamesAndRole = extendingGetTypeNamesAndRole
             , isAcceptablePath = extendingIsAcceptablePath
+           // , lookup = lookupWide
             );
  
 // ---- Collect facts and constraints -----------------------------------------

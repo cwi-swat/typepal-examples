@@ -37,4 +37,6 @@ bool allTests(){
         ;
 }
 
+test bool allTests1() = allTests();
+
 bool main() = allTests();
